@@ -3,7 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Django stuff:
+# Django stuff
 *.log
 *.pot
 *.pyc
@@ -12,37 +12,34 @@ db.sqlite3
 local_settings.py
 
 # Environment variables
-.env
-*.env
-**.env
+**/.env
 
-# Media & Static (optional — only if these are generated dynamically)
-/media
-/staticfiles
-/static/
+# Media & Static (optional — only if generated)
+media/
+staticfiles/
+static/
 
-# VSCode / PyCharm / IDEs
+# IDEs
 .vscode/
 .idea/
 
-# OS-specific
+# OS
 .DS_Store
 Thumbs.db
 
-# Pipenv / Poetry / venvs
+# Virtual environments and build artifacts
 venv/
 env/
 ENV/
+.venv/
 *.egg-info/
 pip-wheel-metadata/
-.venv
 
-# Docker (optional — if you're using it)
-*.bak
-*.swp
-.dockerignore
-
-# Migrations (optional: keep if you want a clean repo; don't ignore if you're collaborating)
+# Migrations — keep .py files if working in teams
 **/migrations/*.pyc
 **/migrations/__pycache__/
-**/migrations/*.py  # Remove this line if you want to track migration files
+# **/migrations/*.py
+
+# Swap or backup files
+*.bak
+*.swp

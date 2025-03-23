@@ -14,6 +14,7 @@ local_settings.py
 # Environment variables
 .env
 *.env
+**.env
 
 # Media & Static (optional — only if these are generated dynamically)
 /media

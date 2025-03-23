@@ -1,37 +1,47 @@
-# Python dependencies and environments
-venv/
-.venv/
-*.pyc
+# Python bytecode
 __pycache__/
-instance/
+*.py[cod]
+*$py.class
 
-# Node.js dependencies
-node_modules/
+# Django stuff:
+*.log
+*.pot
+*.pyc
+*.sqlite3
+db.sqlite3
+local_settings.py
 
 # Environment variables
 .env
 *.env
 
-# Django
-db.sqlite3
-media/
+# Media & Static (optional — only if these are generated dynamically)
+/media
+/staticfiles
+/static/
 
-# Logs
-*.log
-logs/
-
-# OS Files
-.DS_Store
-Thumbs.db
-
-# IDE specific
+# VSCode / PyCharm / IDEs
 .vscode/
 .idea/
 
-# Build directories
-dist/
-build/
+# OS-specific
+.DS_Store
+Thumbs.db
 
-# Docker/Kubernetes specifics
-*.tar
-docker-compose.override.yml
+# Pipenv / Poetry / venvs
+venv/
+env/
+ENV/
+*.egg-info/
+pip-wheel-metadata/
+.venv
+
+# Docker (optional — if you're using it)
+*.bak
+*.swp
+.dockerignore
+
+# Migrations (optional: keep if you want a clean repo; don't ignore if you're collaborating)
+**/migrations/*.pyc
+**/migrations/__pycache__/
+**/migrations/*.py  # Remove this line if you want to track migration files

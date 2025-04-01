@@ -1,45 +1,45 @@
-# Python bytecode
+### Python ###
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Django stuff
+### Django ###
+db.sqlite3
 *.log
 *.pot
 *.pyc
+*.pyo
+*.mo
 *.sqlite3
-db.sqlite3
-local_settings.py
-
-# Environment variables
-**/.env
-
-# Media & Static (optional — only if generated)
 media/
-staticfiles/
-static/
+staticfiles/        # If you're using collectstatic to this directory
+.env
 
-# IDEs
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Virtual environments and build artifacts
-venv/
-env/
-ENV/
+### Virtualenv ###
 .venv/
-*.egg-info/
-pip-wheel-metadata/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
-# Migrations — keep .py files if working in teams
-**/migrations/*.pyc
-**/migrations/__pycache__/
-# **/migrations/*.py
+### VSCode ###
+.vscode/
 
-# Swap or backup files
-*.bak
-*.swp
+### IntelliJ IDEA ###
+.idea/
+*.iml
+out/
+gen/
+
+### macOS ###
+.DS_Store
+
+### Docker ###
+*.pid
+*.tar
+*.log
+docker-compose.override.yml
+__docker_cache__/
+# Optional: ignore Docker volumes if mapped locally
+pgdata/

@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    expose:
+      - 5432:5432
+
+  django:
+    build: .
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py createsuperuser --noinput || true &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+      - static_file:/app/staticfiles
+    ports:
+      - 8000:8000
+    env_file:
+      - .env
+    depends_on:
+      - db
+volumes:
+  postgres_data:
+  static_file:

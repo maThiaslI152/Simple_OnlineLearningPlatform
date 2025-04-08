@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register with JWT</title>
+</head>
+<body>
+  <h2>Register</h2>
+  <input id="username" placeholder="Username"><br>
+  <input id="email" placeholder="Email"><br>
+  <input id="password" type="password" placeholder="Password"><br>
+  <button onclick="register()">Register</button>
+
+  <h3>Response:</h3>
+  <pre id="output"></pre>
+
+  <script>
+    async function register() {
+      const res = await fetch("http://localhost:8000/api/auth/registration", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: document.getElementById("username").value,
+          email: document.getElementById("email").value,
+          password1: document.getElementById("password").value,
+          password2: document.getElementById("password").value
+        })
+      });
+
+      const data = await res.json();
+      document.getElementById("output").textContent = JSON.stringify(data, null, 2);
+    }
+  </script>
+</body>
+</html>

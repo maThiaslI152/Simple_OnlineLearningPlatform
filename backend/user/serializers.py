@@ -13,6 +13,12 @@ class StudentRegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = ['username', 'email', 'password', 'profile_picture', 'student_id', 'grade']
 
+    # Duplicate username check
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("This username is already taken.")
+        return value
+
     def create(self, validated_data):
         student_id = validated_data.pop('student_id')
         grade = validated_data.pop('grade')
@@ -24,6 +30,34 @@ class StudentRegisterSerializer(serializers.ModelSerializer):
             profile_picture=validated_data.get('profile_picture')
         )
         StudentProfile.objects.create(user=user, student_id=student_id, grade=grade)
+        return user
+
+class TeacherRegisterSerializer(serializers.ModelSerializer):
+    expertise = serializers.CharField(write_only=True)
+    department = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password', 'profile_picture', 'expertise', 'department']
+
+    # Duplicate username check
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("This username is already taken.")
+        return value
+
+    def create(self, validated_data):
+        expertise = validated_data.pop('expertise')
+        department = validated_data.pop('department')
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password'],
+            role='teacher',
+            profile_picture=validated_data.get('profile_picture')
+        )
+        TeacherProfile.objects.create(user=user, expertise=expertise, department=department)
         return user
 
 class TeacherRegisterSerializer(serializers.ModelSerializer):

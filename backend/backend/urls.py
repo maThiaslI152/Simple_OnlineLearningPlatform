@@ -5,6 +5,6 @@ from user.token_views import CustomTokenObtainPairView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('user/', include('user.urls')),
-    path('course/', include('course.urls')),
+    path('api/auth/',   include('user.urls')), 
+    path('api/course/', include('course.urls')),
 ]

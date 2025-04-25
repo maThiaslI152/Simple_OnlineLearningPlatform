@@ -7,24 +7,25 @@
       <h2>Login</h2>
       <input v-model="loginData.username" placeholder="Username" />
       <input v-model="loginData.password" type="password" placeholder="Password" />
-      <button @click="login">Login</button>
+      <button @click="onLogin">Login</button>
 
       <hr />
 
-      <!-- Register Section -->
+      <!-- Register Section (unchanged) -->
       <h2>Register</h2>
       <input v-model="registerData.username" placeholder="Username" />
       <input v-model="registerData.email" placeholder="Email" />
       <input v-model="registerData.password" type="password" placeholder="Password" />
       <input v-model="registerData.confirmPassword" type="password" placeholder="Confirm Password" />
       <label>
-        <input type="checkbox" v-model="registerData.isTeacher" /> I am a teacher
+        <input type="checkbox" v-model="registerData.isTeacher" />
+        I am a teacher
       </label>
       <div v-if="registerData.isTeacher">
-        <input v-model="registerData.expertise" placeholder="Expertise (required)" />
-        <input v-model="registerData.department" placeholder="Department (required)" />
+        <input v-model="registerData.expertise" placeholder="Expertise" />
+        <input v-model="registerData.department" placeholder="Department" />
       </div>
-      <button @click="register" :disabled="isRegistering">
+      <button @click="onRegister" :disabled="isRegistering">
         {{ isRegistering ? 'Registering...' : 'Register' }}
       </button>
     </div>
@@ -32,14 +33,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import api from '@/axios';
-import { useRouter } from 'vue-router';
+import { ref, watchEffect } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
 
-const router = useRouter();
-const isRegistering = ref(false);
+const router = useRouter()
+const { login, register, isLoggedIn } = useAuth()
 
-const loginData = ref({ username: '', password: '' });
+const loginData = ref({ username: '', password: '' })
 const registerData = ref({
   username: '',
   email: '',
@@ -47,76 +48,42 @@ const registerData = ref({
   confirmPassword: '',
   isTeacher: false,
   expertise: '',
-  department: '',
-});
+  department: ''
+})
+const isRegistering = ref(false)
 
-//Login Func
-const login = async () => {
-  localStorage.removeItem('access');
-  localStorage.removeItem('refresh');
-  try {
-    const response = await api.post('token/', loginData.value);
-    if (response && response.data) {
-      localStorage.setItem('access', response.data.access);
-      localStorage.setItem('refresh', response.data.refresh);
-
-      const whoami = await api.get('whoami/');
-      // eslint-disable-next-line
-      const role = whoami.data.role.toLowerCase();
-      router.push('/dashboard');
-      localStorage.setItem('username', whoami.data.username);
-    }
-  } catch (error) {
-    console.error('Login Failed:', error.response ? error.response.data : error.message);
-    alert('Login failed! Please check your username and password.');
+watchEffect(() => {
+  console.log('AuthView — isLoggedIn:', isLoggedIn.value)
+  if (isLoggedIn.value) {
+    console.log('Redirecting to /dashboard')
+    router.push('/dashboard')
   }
-};
+})
+async function onLogin() {
+  try { await login(loginData.value) }
+  catch { alert('Login failed. Check credentials.') }
+}
 
-// Register Func
-const register = async () => {
-  if (registerData.value.password !== registerData.value.confirmPassword) {
-    alert('Passwords do not match!');
-    return;
-  }
-
-  if (isRegistering.value) return;
-  isRegistering.value = true;
+async function onRegister() {
+  if (registerData.value.password !== registerData.value.confirmPassword)
+    return alert('Passwords must match.')
+  if (isRegistering.value) return
+  isRegistering.value = true
 
   try {
-    const endpoint = registerData.value.isTeacher
-      ? 'register/teacher/'
-      : 'register/student/';
-
-    const payload = {
-      username: registerData.value.username,
-      password: registerData.value.password,
-      email: registerData.value.email,
-    };
-
-    if (registerData.value.isTeacher) {
-      if (!registerData.value.expertise || !registerData.value.department) {
-        alert('Expertise and Department are required for teachers!');
-        isRegistering.value = false;
-        return;
-      }
-      payload.expertise = registerData.value.expertise;
-      payload.department = registerData.value.department;
-    }
-
-    await api.post(endpoint, payload);
-    alert('Register Success! You can now log in.');
-  } catch (error) {
-    console.error('Register Failed:', error.response ? error.response.data : error.message);
-    if (error.response && error.response.data.username) {
-      alert('Username already exists. Please try a different one.');
-    } else {
-      alert('Register Failed: ' + (error.response ? JSON.stringify(error.response.data) : error.message));
-    }
-  } finally {
-    isRegistering.value = false;
+    await register(registerData.value)
+    alert('Registered! Please log in.')
   }
-};
+  catch (e) {
+    const msg = e.response?.data?.username
+      ? 'Username already exists.'
+      : e.message
+    alert('Register failed: ' + msg)
+  }
+  finally { isRegistering.value = false }
+}
 </script>
+
 
 <style scoped>
 .auth-container {

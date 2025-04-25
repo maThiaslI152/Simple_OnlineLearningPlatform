@@ -1,118 +1,110 @@
 <template>
   <div class="dashboard">
-    <h1>Welcome, {{ username }} (Teacher)</h1>
-    <button @click="logout">Logout</button>
+    <!-- loading… -->
+    <div v-if="loading">
+      <h1>Loading your dashboard…</h1>
+    </div>
 
-    <hr />
+    <div v-else>
+      <!-- header + logout -->
+      <h1>Welcome, {{ user.username }} (Teacher)</h1>
+      <button @click="logout">Logout</button>
+      <hr />
 
-    <h2>Your Courses</h2>
-    <ul>
-      <li v-for="course in teacherCourses" :key="course.id">
-        <router-link :to="`/course/${course.id}`">
-          {{ course.title }} - {{ course.description }}
-        </router-link>
-      </li>
-    </ul>
+      <!-- your courses list -->
+      <h2>Your Courses</h2>
+      <ul>
+        <li v-for="c in courses" :key="c.id">
+          <router-link :to="{ name: 'CoursePage', params: { id: c.id } }">
+            {{ c.title }} — {{ c.description }}
+          </router-link>
+        </li>
+      </ul>
 
-    <h3>Add New Course</h3>
-    <input v-model="newCourse.title" placeholder="Course Title" />
-    <input v-model="newCourse.description" placeholder="Course Description" />
-    <button @click="addCourse" :disabled="isAdding">
-      {{ isAdding ? 'Adding...' : 'Add Course' }}
-    </button>
+      <!-- add new course -->
+      <hr />
+      <h3>Add New Course</h3>
+      <input v-model="newCourse.title" placeholder="Title" :disabled="saving" />
+      <input v-model="newCourse.description" placeholder="Description" :disabled="saving" />
+      <button @click="addCourse" :disabled="saving">
+        {{ saving ? 'Saving…' : 'Create Course' }}
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import api, { courseApi } from '@/axios';
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
+import courseService from '@/services/course'
 
-const router = useRouter();
-const username = ref('');
-const whoami = ref({});
-const teacherCourses = ref([]);
-const newCourse = ref({ title: '', description: '' });
-const isAdding = ref(false);
-
-const logout = () => {
-  localStorage.removeItem('access');
-  localStorage.removeItem('refresh');
-  router.push('/login');
-};
-
-const loadCourses = async () => {
-  try {
-    const courseResponse = await courseApi.get('/');
-    teacherCourses.value = courseResponse.data.filter(
-      (course) => course.teacher === whoami.value.id
-    );
-  } catch (error) {
-    console.error('Failed to load courses:', error);
-  }
-};
-
-const addCourse = async () => {
-  if (!newCourse.value.title || !newCourse.value.description) {
-    alert('Please fill out both title and description.');
-    return;
-  }
-  if (isAdding.value) return;
-  isAdding.value = true;
-  try {
-    courseApi.post('/', newCourse.value);
-    alert('Course added successfully!');
-    newCourse.value = { title: '', description: '' };
-    await loadCourses();
-  } catch (error) {
-    alert('Failed to add course.');
-    console.error(error);
-  } finally {
-    isAdding.value = false;
-  }
-};
+const { user, isLoggedIn, refresh, logout } = useAuth()
+const router = useRouter()
+const loading = ref(true)
+const courses = ref([])
+const newCourse = ref({ title: '', description: '' })
+const saving = ref(false)
 
 onMounted(async () => {
-  const token = localStorage.getItem('access');
-  if (!token) {
-    router.push('/login');
+  if (!isLoggedIn.value) {
+    return router.replace({ name: 'login' })
   }
   try {
-    const userResponse = await api.get('whoami/');
-    whoami.value = userResponse.data;
-    username.value = whoami.value.username;
-    await loadCourses();
-  } catch (error) {
-    console.error('Failed to fetch user info:', error);
-    router.push('/login');
+    await refresh()
+    const { data } = await courseService.listMine()
+    courses.value = data
+  } catch (e) {
+    console.error('TeacherDashboard onMounted error:', e)
+    logout()
+    return router.replace({ name: 'login' })
+  } finally {
+    loading.value = false
   }
-});
+})
+
+async function addCourse() {
+  if (!newCourse.value.title) return
+  saving.value = true
+  try {
+    await courseService.create(newCourse.value)
+    newCourse.value = { title: '', description: '' }
+    const { data } = await courseService.listMine()
+    courses.value = data
+  } catch (e) {
+    console.error(e)
+  } finally {
+    saving.value = false
+  }
+}
 </script>
 
 <style scoped>
 .dashboard {
-  text-align: center;
-  margin-top: 100px;
+  max-width: 600px;
+  margin: 40px auto;
+  font-family: sans-serif;
 }
 
 input {
-  margin: 5px;
-  padding: 8px;
-  width: 200px;
+  display: block;
+  width: 100%;
+  margin: 8px 0;
+  padding: 6px
 }
 
 button {
   padding: 8px 16px;
   margin-top: 10px;
-  cursor: pointer;
+  cursor: pointer
 }
 
 a {
-  text-decoration: none;
   color: #4caf50;
+  text-decoration: none
 }
 
 a:hover {
-  text-decoration: underline;
+  text-decoration: underline
 }
 </style>

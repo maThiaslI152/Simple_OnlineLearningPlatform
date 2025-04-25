@@ -4,57 +4,53 @@ import Dashboard from '@/views/Dashboard.vue';
 import TeacherDashboard from '@/components/TeacherDashboard.vue';
 import StudentDashboard from '@/components/StudentDashboard.vue';
 import CoursePage from '@/views/CoursePage.vue';
+import store from '@/store/index'
 
 const routes = [
-  {
-    path: '/',
-    redirect: '/login',
-  },
-  {
-    path: '/login',
-    name: 'login',
-    component: AuthView,
-  },
+  { path: '/', redirect: '/login' },
+  { path: '/login', name: 'login', component: AuthView },
   {
     path: '/dashboard',
     name: 'dashboard',
     component: Dashboard,
+    meta: { requiresAuth: true }
   },
   {
     path: '/teacher-dashboard',
     name: 'TeacherDashboard',
     component: TeacherDashboard,
+    meta: { requiresAuth: true }
   },
   {
     path: '/student-dashboard',
     name: 'StudentDashboard',
     component: StudentDashboard,
+    meta: { requiresAuth: true }
   },
   {
     path: '/course/:id',
     name: 'CoursePage',
     component: CoursePage,
-    props: route => ({ id: Number(route.params.id) })
+    props: route => ({ id: Number(route.params.id) }),
+    meta: { requiresAuth: true }
   },
-];
+]
+
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes,
-});
+})
 
-// Token Guard
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('access');
-  const protectedPages = ['dashboard', 'TeacherDashboard', 'StudentDashboard', 'coursePage'];
-
-  if (protectedPages.includes(to.name) && !token) {
-    next('/login');
-  } else if (to.name === 'login' && token) {
-    next('/dashboard');
-  } else {
-    next();
+  const token = store.state.auth.accessToken
+  if (to.meta.requiresAuth && !token) {
+    return next({ name: 'login' })
   }
-});
+  if (to.name === 'login' && token) {
+    return next({ name: 'dashboard' })
+  }
+  next()
+})
 
-export default router;
+export default router

@@ -1,100 +1,59 @@
 <template>
-    <div class="note-section">
-        <h2>Notes (Week {{ weekNumber }})</h2>
-
-        <ul>
-            <li v-for="note in notes" :key="note.id">
-                <strong>{{ note.title }}</strong>
-                <p>{{ note.content }}</p>
-            </li>
-        </ul>
-
-        <div v-if="isTeacher">
-            <h3>Add New Note</h3>
-            <input v-model="newNote.title" placeholder="Note Title" />
-            <textarea v-model="newNote.content" placeholder="Note Content (Markdown supported)"></textarea>
-            <button @click="addNote">Add Note</button>
-        </div>
-    </div>
-</template>
-
-<script setup>
-import { ref, onMounted } from 'vue';
-import { courseApi } from '@/axios';
-
-const props = defineProps({
-    courseId: Number,
-    weekNumber: Number,
-    isTeacher: Boolean,
-});
-
-const notes = ref([]);
-const newNote = ref({
-    title: '',
-    content: '',
-});
-
-const loadNotes = async () => {
-    try {
-        const response = await courseApi.get('note/', {
-            params: {
-                course: props.courseId,
-                week_number: props.weekNumber,  // Filter by week!
-            },
-        });
-        notes.value = response.data;
-    } catch (error) {
-        console.error('Error loading notes:', error);
-    }
-};
-
-const addNote = async () => {
-    if (!newNote.value.title || !newNote.value.content) {
-        alert('Please fill out both title and content.');
-        return;
-    }
-
-    const payload = {
-        title: newNote.value.title,
-        content: newNote.value.content,
-        course: props.courseId,
-        week_number: props.weekNumber,  // Include week number here
-    };
-
-    try {
-        await courseApi.post('note/', payload);
-        alert('Note added successfully!');
-        newNote.value = { title: '', content: '' };
-        await loadNotes();
-    } catch (error) {
-        alert('Failed to add note.');
-        console.error(error);
-    }
-};
-
-onMounted(() => {
-    loadNotes();
-});
-</script>
-
-<style scoped>
-.note-section {
-    text-align: left;
-    margin-top: 30px;
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-}
-
-textarea {
+    <section class="notes-section">
+      <h3>Notes (Week {{ week }})</h3>
+      <ul v-if="notes.length">
+        <li v-for="n in notes" :key="n.id">
+          <strong>{{ n.title }}</strong>
+          <p>{{ n.content }}</p>
+        </li>
+      </ul>
+      <p v-else>No notes for this week.</p>
+  
+      <div v-if="isTeacher" class="add-note-form">
+        <h4>Add a Note</h4>
+        <input v-model="newNote.title" placeholder="Title" />
+        <textarea v-model="newNote.content" placeholder="Content"></textarea>
+        <button @click="addNote">Save Note</button>
+      </div>
+    </section>
+  </template>
+  
+  <script setup>
+  import { computed, ref } from 'vue'
+  import { useAuth } from '@/composables/useAuth'
+  import courseService from '@/services/course'
+  
+  const props = defineProps({
+    notes:    { type: Array, default: () => [] },
+    week:     { type: Number, required: true },
+    courseId: { type: Number, required: true }
+  })
+  const emit = defineEmits(['refreshModules'])
+  
+  const { user } = useAuth()
+  const isTeacher = computed(() => user.value.roles?.is_teacher)
+  
+  const newNote = ref({ title: '', content: '' })
+  
+  async function addNote() {
+    if (!newNote.value.title.trim() || !newNote.value.content.trim()) return
+    await courseService.createNote(props.courseId, props.week, newNote.value)
+    newNote.value = { title: '', content: '' }
+    emit('refreshModules')
+  }
+  </script>
+  
+  <style scoped>
+  .notes-section { margin-top: 20px; }
+  .add-note-form { margin-top: 15px; }
+  .add-note-form input,
+  .add-note-form textarea {
     display: block;
-    margin-top: 10px;
     width: 100%;
-    height: 80px;
-}
-
-input,
-button {
-    margin-top: 10px;
-}
-</style>
+    margin: 5px 0;
+  }
+  .add-note-form button {
+    margin-top: 5px;
+    padding: 6px 12px;
+  }
+  </style>

@@ -1,51 +1,33 @@
-import axios from 'axios';
+import axios from 'axios'
+import store from './store'
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000/user/',
-});
+  // ▶️ add the trailing slash here
+  baseURL: 'http://localhost:8000/api/auth/',
+  headers: { 'Content-Type': 'application/json' }
+})
 
-export const courseApi = axios.create({
-  baseURL: 'http://localhost:8000/course/',
-});
+// Attach access token
+api.interceptors.request.use(cfg => {
+  const token = store.state.auth.accessToken
+  if (token) cfg.headers.Authorization = `Bearer ${token}`
+  return cfg
+})
 
-// Attach token
-const attachToken = (config) => {
-  const token = localStorage.getItem('access');
-  if (token) {
-    config.headers['Authorization'] = `Bearer ${token}`;
+// Auto-refresh on 401
+api.interceptors.response.use(null, async err => {
+  const { response, config } = err
+  if (response?.status === 401 && store.state.auth.refreshToken) {
+    // ▶️ use `api.post`, not bare `axios.post`, so baseURL + path works
+    const { data } = await api.post('token/refresh/', {
+      refresh: store.state.auth.refreshToken
+    })
+    store.commit('auth/setAccessToken', data.access)
+    // retry original request
+    config.headers.Authorization = `Bearer ${data.access}`
+    return api.request(config)
   }
-  return config;
-};
+  return Promise.reject(err)
+})
 
-api.interceptors.request.use(attachToken);
-courseApi.interceptors.request.use(attachToken);
-
-// Refresh token handling shared by both api and courseApi
-const handleRefresh = async (error, originalRequest) => {
-  const refresh = localStorage.getItem('refresh');
-  if (error.response?.status === 401 && refresh && !originalRequest._retry) {
-    originalRequest._retry = true;
-    try {
-      const res = await axios.post(
-        'http://localhost:8000/user/token/refresh/',
-        { refresh }
-      );
-      const newAccess = res.data.access;
-      localStorage.setItem('access', newAccess);
-      originalRequest.headers['Authorization'] = `Bearer ${newAccess}`;
-      return axios(originalRequest);
-    } catch (refreshError) {
-      console.error('Refresh token expired. Logging out.');
-      localStorage.removeItem('access');
-      localStorage.removeItem('refresh');
-      window.location.href = '/login';
-      return Promise.reject(refreshError);
-    }
-  }
-  return Promise.reject(error);
-};
-
-api.interceptors.response.use((res) => res, (error) => handleRefresh(error, error.config));
-courseApi.interceptors.response.use((res) => res, (error) => handleRefresh(error, error.config));
-
-export default api;
+export default api

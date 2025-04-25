@@ -1,67 +1,83 @@
 <template>
   <div class="dashboard">
-    <h1>Welcome to Student Dashboard!</h1>
-    <p>You are logged in as: {{ username }}</p>
-    <button @click="logout">Logout</button>
+    <div v-if="loading">
+      <h1>Loading courses…</h1>
+    </div>
+    <div v-else>
+      <h1>Welcome, {{ user.username }} (Student)</h1>
+      <button @click="logout">Logout</button>
+      <hr />
 
-    <hr />
-
-    <h2>Your Enrolled Courses</h2>
-    <ul>
-      <li v-for="course in studentCourses" :key="course.id">
-        {{ course.title }} - {{ course.description }}
-      </li>
-    </ul>
+      <h2>Available Courses</h2>
+      <ul>
+        <li v-for="c in courses" :key="c.id">
+          <router-link :to="{ name: 'CoursePage', params: { id: c.id } }">
+            {{ c.title }} — {{ c.description }}
+          </router-link>
+        </li>
+      </ul>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import api, { courseApi } from '@/axios';
-import { useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
+import courseService from '@/services/course'
 
-const router = useRouter();
-const username = ref('');
-const whoami = ref({});
-const studentCourses = ref([]);
+const { user, isLoggedIn, refresh, logout } = useAuth()
+const router = useRouter()
+const loading = ref(true)
+const courses = ref([])
 
 onMounted(async () => {
-  try {
-    const userResponse = await api.get('whoami/');
-    whoami.value = userResponse.data;
-    username.value = whoami.value.username;
-    await loadCourses();
-  } catch (error) {
-    console.error('Failed to fetch user info:', error);
-    router.push('/login');
+  if (!isLoggedIn.value) {
+    return router.replace({ name: 'login' })
   }
-});
-
-const loadCourses = async () => {
   try {
-    const courseResponse = await courseApi.get('');
-    studentCourses.value = courseResponse.data;
-  } catch (error) {
-    console.error('Failed to load courses:', error);
+    await refresh()
+    // students see all courses (or you could call a dedicated endpoint)
+    const { data } = await courseService.listAll()
+    courses.value = data
+  } catch (e) {
+    console.error('StudentDashboard error:', e)
+    logout()
+    router.replace({ name: 'login' })
+  } finally {
+    loading.value = false
   }
-};
-
-const logout = () => {
-  localStorage.removeItem('access');
-  localStorage.removeItem('refresh');
-  router.push('/login');
-};
+})
 </script>
 
 <style scoped>
 .dashboard {
-  text-align: center;
-  margin-top: 100px;
+  max-width: 600px;
+  margin: 40px auto;
+  font-family: sans-serif;
 }
 
 button {
   padding: 8px 16px;
   margin-top: 10px;
-  cursor: pointer;
+  cursor: pointer
+}
+
+ul {
+  list-style: none;
+  padding: 0
+}
+
+li+li {
+  margin-top: 6px
+}
+
+a {
+  color: #4caf50;
+  text-decoration: none
+}
+
+a:hover {
+  text-decoration: underline
 }
 </style>

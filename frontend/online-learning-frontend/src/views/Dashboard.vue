@@ -1,59 +1,58 @@
+<!-- src/views/Dashboard.vue -->
 <template>
   <div>
-    <div class="dashboard">
-      <h1>Loading your dashboard...</h1>
+    <!-- show spinner while checking auth -->
+    <div v-if="loading" class="dashboard">
+      <h1>Loading your dashboard…</h1>
+    </div>
+
+    <!-- once loaded, display the correct dashboard -->
+    <TeacherDashboard v-else-if="isTeacher" />
+    <StudentDashboard v-else-if="isStudent" />
+
+    <!-- fallback if neither -->
+    <div v-else class="dashboard">
+      <h1>Unauthorized</h1>
+      <button @click="onLogout">Go to Login</button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import api from '@/axios';
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
+import TeacherDashboard from '@/components/TeacherDashboard.vue'
+import StudentDashboard from '@/components/StudentDashboard.vue'
 
-const router = useRouter();
-const username = ref('');
-const role = ref('');
+// Destructure your auth composable once
+const { user, isLoggedIn, refresh, logout } = useAuth()
+const router = useRouter()
 
-// Logout and cleanup tokens
-const logout = () => {
-  localStorage.removeItem('access');
-  localStorage.removeItem('refresh');
-  router.push('/login');
-};
+// Reactive flags
+const loading = ref(true)
+const isTeacher = computed(() => user.value.roles?.is_teacher)
+const isStudent = computed(() => user.value.roles?.is_student)
 
-// Check token, load user, and redirect by role
-const checkAuthAndRedirect = async () => {
-  const token = localStorage.getItem('access');
-  const refresh = localStorage.getItem('refresh');
+// Unified logout + redirect
+function onLogout() {
+  logout()
+  router.replace({ name: 'login' })
+}
 
-  if (!token || !refresh) {
-    logout();
-    return;
+// On mount: verify auth, fetch whoami, then hide spinner
+onMounted(async () => {
+  if (!isLoggedIn.value) {
+    return router.replace({ name: 'login' })
   }
-
   try {
-    const response = await api.get('whoami/');
-    username.value = response.data.username;
-    role.value = response.data.role;
-
-    if (role.value === 'teacher') {
-      router.push('/teacher-dashboard');
-    } else if (role.value === 'student') {
-      router.push('/student-dashboard');
-    } else {
-      alert('Unknown role, contact admin.');
-      logout();
-    }
-  } catch (error) {
-    console.error('Token invalid or expired:', error);
-    logout();
+    await refresh()
+  } catch {
+    return onLogout()
+  } finally {
+    loading.value = false
   }
-};
-
-onMounted(() => {
-  checkAuthAndRedirect();
-});
+})
 </script>
 
 <style scoped>

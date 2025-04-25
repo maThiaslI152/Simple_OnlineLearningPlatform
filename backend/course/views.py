@@ -1,97 +1,88 @@
+from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework import status, viewsets, permissions
-from django.shortcuts import get_object_or_404
-from .models import Course, Note, Video, Homework, Test, Week
+from django_filters.rest_framework import DjangoFilterBackend
+from .models import Course, Week, Note, Video, Homework, Test
 from .serializers import (
-    CourseSerializer, 
-    CourseDetailSerializer, 
-    NoteSerializer, 
-    VideoSerializer, 
-    HomeworkSerializer, 
+    CourseSerializer,
+    CourseDetailSerializer,
+    NoteSerializer,
+    VideoSerializer,
+    HomeworkSerializer,
     TestSerializer
 )
 
+class IsTeacherOrReadOnly(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if view.action in ['list', 'retrieve', 'mine']:
+            return request.user.is_authenticated
+        return (
+            request.user.is_authenticated and
+            request.user.role == 'teacher'
+        )
+
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()
-    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CourseSerializer
+    permission_classes = [IsTeacherOrReadOnly]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['teacher', 'students']
 
     def get_serializer_class(self):
-        if self.action in ['list', 'create']:
-            return CourseSerializer
-        return CourseDetailSerializer
+        if self.action == 'retrieve':
+            return CourseDetailSerializer
+        return CourseSerializer
 
     def perform_create(self, serializer):
         serializer.save(teacher=self.request.user)
 
-    # ✅ Add week endpoint
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'teacher':
+            return Course.objects.filter(teacher=user)
+        return Course.objects.all()
+
+    @action(detail=False, methods=['get'], url_path='mine')
+    def mine(self, request):
+        qs = self.get_queryset()
+        serializer = CourseSerializer(qs, many=True, context={'request': request})
+        return Response(serializer.data)
+
     @action(detail=True, methods=['post'], url_path='add_week')
     def add_week(self, request, pk=None):
         course = self.get_object()
-
-        existing_weeks = course.weeks.values_list('week_number', flat=True)
-        next_week = max(existing_weeks, default=0) + 1
-
-        # Check if this week already exists (safety, but not really needed with correct logic)
-        if Week.objects.filter(course=course, week_number=next_week).exists():
+        existing = course.weeks.values_list('week_number', flat=True)
+        next_week = max(existing, default=0) + 1
+        if course.weeks.filter(week_number=next_week).exists():
             return Response(
-                {"error": f"Week {next_week} already exists."},
+                {'error': 'Week already exists.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
         Week.objects.create(course=course, week_number=next_week)
-        return Response({"next_week": next_week}, status=status.HTTP_201_CREATED)
+        return Response({'week_number': next_week}, status=status.HTTP_201_CREATED)
 
-    # ✅ Custom retrieve to include weeks
     def retrieve(self, request, pk=None):
         course = self.get_object()
-        available_weeks = sorted(course.weeks.values_list('week_number', flat=True))
+        serializer = CourseDetailSerializer(course, context={'request': request})
+        return Response(serializer.data)
 
-        return Response({
-            "id": course.id,
-            "title": course.title,
-            "description": course.description,
-            "available_weeks": available_weeks,
-        })
+class BaseModuleViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['course', 'week_number']
 
-# ✅ Shared logic to avoid repeating the same filter code
-def filter_by_course_and_week(queryset, request):
-    course = request.query_params.get('course')
-    week = request.query_params.get('week_number')
-    if course:
-        queryset = queryset.filter(course=course)
-    if week:
-        queryset = queryset.filter(week_number=week)
-    return queryset
-
-class NoteViewSet(viewsets.ModelViewSet):
+class NoteViewSet(BaseModuleViewSet):
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        return filter_by_course_and_week(Note.objects.all(), self.request)
-
-class VideoViewSet(viewsets.ModelViewSet):
+class VideoViewSet(BaseModuleViewSet):
     queryset = Video.objects.all()
     serializer_class = VideoSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        return filter_by_course_and_week(Video.objects.all(), self.request)
-
-class HomeworkViewSet(viewsets.ModelViewSet):
+class HomeworkViewSet(BaseModuleViewSet):
     queryset = Homework.objects.all()
     serializer_class = HomeworkSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        return filter_by_course_and_week(Homework.objects.all(), self.request)
-
-class TestViewSet(viewsets.ModelViewSet):
+class TestViewSet(BaseModuleViewSet):
     queryset = Test.objects.all()
     serializer_class = TestSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return filter_by_course_and_week(Test.objects.all(), self.request)

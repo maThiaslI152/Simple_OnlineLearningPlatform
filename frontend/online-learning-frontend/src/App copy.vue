@@ -28,8 +28,34 @@
 </template>
 
 <script setup>
-import { useAuth } from '@/composables/useAuth'
-const { logout } = useAuth()
+import { useRoute, useRouter } from 'vue-router';
+import { computed, ref, onMounted, watchEffect } from 'vue';
+
+const route = useRoute();
+const router = useRouter();
+
+const showNavbar = computed(() => route.path !== '/' && route.path !== '/login');
+const username = ref('');
+
+const loadUsername = () => {
+  username.value = localStorage.getItem('username') || 'Unknown';
+};
+
+onMounted(() => {
+  loadUsername();
+});
+
+// Refresh username every time the route changes (handles logout/login switches)
+watchEffect(() => {
+  loadUsername();
+});
+
+const logout = () => {
+  localStorage.removeItem('access');
+  localStorage.removeItem('refresh');
+  localStorage.removeItem('username');
+  router.push('/login');
+};
 </script>
 
 <style>

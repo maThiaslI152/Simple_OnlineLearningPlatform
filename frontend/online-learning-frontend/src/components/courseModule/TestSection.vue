@@ -1,106 +1,62 @@
 <template>
-    <div class="test-section">
-        <h2>Tests</h2>
-
-        <ul>
-            <li v-for="test in tests" :key="test.id">
-                <strong>{{ test.title }}</strong>
-                <pre>{{ formatQuestions(test.questions) }}</pre>
+    <section class="test-section">
+        <h3>Tests (Week {{ week }})</h3>
+        <ul v-if="tests.length">
+            <li v-for="t in tests" :key="t.id">
+                <strong>{{ t.title }}</strong>
+                <p>{{ t.instructions }}</p>
             </li>
         </ul>
+        <p v-else>No tests for this week.</p>
 
-        <div v-if="isTeacher">
-            <h3>Add New Test</h3>
-            <input v-model="newTest.title" placeholder="Test Title (e.g., Pre-Test, Post-Test)" />
-            <textarea v-model="newTest.questions" placeholder='Enter questions as JSON. Example:
-  [{"question": "2+2=?", "options": ["3", "4"], "answer": "4"}]'></textarea>
-            <button @click="addTest">Add Test</button>
+        <div v-if="isTeacher" class="add-test-form">
+            <h4>Create Test</h4>
+            <input v-model="newTest.title" placeholder="Title" />
+            <textarea v-model="newTest.instructions" placeholder="Instructions"></textarea>
+            <button @click="addTest">Save Test</button>
         </div>
-    </div>
+    </section>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { courseApi } from '@/axios';
+import { computed, ref } from 'vue'
+import { useAuth } from '@/composables/useAuth'
+import courseService from '@/services/course'
 
 const props = defineProps({
-    courseId: Number,
-    isTeacher: Boolean,
-});
+    tests: { type: Array, default: () => [] },
+    week: { type: Number, required: true },
+    courseId: { type: Number, required: true }
+})
+const emit = defineEmits(['refreshModules'])
 
-const tests = ref([]);
-const newTest = ref({
-    title: '',
-    questions: '',
-});
+const { user } = useAuth()
+const isTeacher = computed(() => user.value.roles?.is_teacher)
 
-const loadTests = async () => {
-    try {
-        const response = await courseApi.get('test/');
-        tests.value = response.data.filter(test => test.course === props.courseId);
-    } catch (error) {
-        console.error('Error loading tests:', error);
-    }
-};
+const newTest = ref({ title: '', instructions: '' })
 
-const addTest = async () => {
-    if (!newTest.value.title || !newTest.value.questions) {
-        alert('Please fill out the title and questions.');
-        return;
-    }
-
-    let questionsParsed;
-    try {
-        questionsParsed = JSON.parse(newTest.value.questions);
-    } catch (err) {
-        alert('Questions format is invalid JSON.');
-        return;
-    }
-
-    const payload = {
-        title: newTest.value.title,
-        questions: questionsParsed,
-        course: props.courseId,
-    };
-
-    try {
-        await courseApi.post('test/', payload);
-        alert('Test added successfully!');
-        newTest.value = { title: '', questions: '' };
-        await loadTests();
-    } catch (error) {
-        alert('Failed to add test.');
-        console.error(error);
-    }
-};
-
-const formatQuestions = (questions) => {
-    return JSON.stringify(questions, null, 2);
-};
-
-onMounted(() => {
-    loadTests();
-});
+async function addTest() {
+    if (!newTest.value.title.trim() || !newTest.value.instructions.trim()) return
+    await courseService.createTest(props.courseId, props.week, newTest.value)
+    newTest.value = { title: '', instructions: '' }
+    emit('refreshModules')
+}
 </script>
 
 <style scoped>
 .test-section {
-    text-align: left;
-    margin-top: 30px;
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    margin-top: 20px;
 }
 
-textarea {
+.add-test-form input,
+.add-test-form textarea {
     display: block;
-    margin-top: 10px;
     width: 100%;
-    height: 100px;
+    margin: 5px 0;
 }
 
-input,
-button {
-    margin-top: 10px;
+.add-test-form button {
+    margin-top: 5px;
+    padding: 6px 12px;
 }
 </style>

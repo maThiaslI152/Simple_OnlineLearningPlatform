@@ -1,110 +1,117 @@
 <template>
     <div class="course-page">
+        <!-- Course header -->
         <h1>Course: {{ course.title }}</h1>
         <p>{{ course.description }}</p>
-
         <hr />
 
-        <h2>Notes</h2>
-        <ul>
-            <li v-for="note in course.notes" :key="note.id">
-                <strong>{{ note.title }}</strong>
-                <p>{{ note.content }}</p>
-            </li>
-        </ul>
-
-        <div class="weeks-section">
-            <h2>Weeks</h2>
-            <div class="weeks-list">
-                <button v-for="week in weeks" :key="week" @click="selectWeek(week)"
-                    :class="{ active: selectedWeek === week }">
-                    Week {{ week }}
-                </button>
-                <button @click="addWeek" class="add-week-button" v-if="isTeacher">
-                    + Add Week
-                </button>
-            </div>
-
-            <div v-if="selectedWeek" class="week-section">
-                <h3>Content for Week {{ selectedWeek }}</h3>
-
-                <!-- Editable area for teacher -->
-                <div v-if="isTeacher">
-                    <textarea v-model="weekContent[selectedWeek]"
-                        placeholder="Write notes or instructions for this week"></textarea>
-                    <button @click="saveWeekContent">Save Content</button>
-                </div>
-
-                <!-- View-only for students -->
-                <div v-else>
-                    <p>{{ weekContent[selectedWeek] || 'No content yet for this week.' }}</p>
-                </div>
-            </div>
+        <!-- Week buttons + Add Week (teachers only) -->
+        <div class="weeks-buttons">
+            <button v-for="w in weeks" :key="w" :class="['week-button', { active: w === selectedWeek }]"
+                @click="selectWeek(w)">
+                Week {{ w }}
+            </button>
+            <button v-if="isTeacher" class="add-week-button" @click="addWeek">
+                + Add Week
+            </button>
         </div>
 
+        <!-- Modules for the selected week -->
+        <div v-if="selectedWeek !== null" class="module-sections">
+            <NoteSection :notes="notes" :week="selectedWeek" :course-id="courseId"
+                @refreshModules="loadModules(selectedWeek)" />
+            <VideoSection :videos="videos" :week="selectedWeek" :course-id="courseId"
+                @refreshModules="loadModules(selectedWeek)" />
+            <HomeworkSection :homeworks="homeworks" :week="selectedWeek" :course-id="courseId"
+                @refreshModules="loadModules(selectedWeek)" />
+            <TestSection :tests="tests" :week="selectedWeek" :course-id="courseId"
+                @refreshModules="loadModules(selectedWeek)" />
+        </div>
     </div>
 </template>
 
 <script setup>
-import { useRoute } from 'vue-router';
-import { ref, onMounted, computed } from 'vue';
-import { courseApi } from '@/axios';
+import { ref, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
+import courseService from '@/services/course'
 
-const props = defineProps({
-    id: Number,              // Course ID
-    isTeacher: Boolean,      // Role check
-});
+import NoteSection from '@/components/courseModule/NoteSection.vue'
+import VideoSection from '@/components/courseModule/VideoSection.vue'
+import HomeworkSection from '@/components/courseModule/HomeworkSection.vue'
+import TestSection from '@/components/courseModule/TestSection.vue'
 
-// Reactive states
-const course = ref({});
-const weeks = ref([]);
-const selectedWeek = ref(null);
-const weekContent = ref({});  // For storing content per week
+// Route param
+const route = useRoute()
+const router = useRouter()
+const courseId = computed(() => Number(route.params.id))
 
-const courseId = computed(() => props.id);
+// Auth & role
+const { isLoggedIn, user } = useAuth()
+const isTeacher = computed(() => user.value.roles?.is_teacher)
 
-// Load course info
-const loadCourse = async () => {
-    if (!courseId.value) {
-        console.error('Course ID is missing!');
-        return;
+// Data
+const course = ref({ title: '', description: '' })
+const weeks = ref([])
+const selectedWeek = ref(null)
+
+// Module lists
+const notes = ref([])
+const videos = ref([])
+const homeworks = ref([])
+const tests = ref([])
+
+// Load course detail and available weeks
+async function loadCourseDetail() {
+    if (!isLoggedIn.value) {
+        return router.replace({ name: 'login' })
     }
+    const { data } = await courseService.getDetail(courseId.value)
+    course.value = data
+    weeks.value = data.available_weeks || []
+    // auto-select first week if none
+    if (weeks.value.length && selectedWeek.value === null) {
+        selectWeek(weeks.value[0])
+    }
+}
+
+// Load all modules for a given week in parallel
+async function loadModules(week) {
+    const [n, v, h, t] = await Promise.all([
+        courseService.listNotes(courseId.value, week),
+        courseService.listVideos(courseId.value, week),
+        courseService.listHomework(courseId.value, week),
+        courseService.listTests(courseId.value, week),
+    ])
+    notes.value = n.data
+    videos.value = v.data
+    homeworks.value = h.data
+    tests.value = t.data
+}
+
+// Handle week button click
+function selectWeek(week) {
+    selectedWeek.value = week
+    loadModules(week)
+}
+
+// Teachers can add a new week
+async function addWeek() {
+    await courseService.addWeek(courseId.value)
+    // reload weeks list
+    await loadCourseDetail()
+}
+
+// On mount: fetch everything
+onMounted(async () => {
     try {
-        const response = await courseApi.get(`${courseId.value}/`);
-        course.value = response.data;
-        weeks.value = response.data.available_weeks || [];
-    } catch (error) {
-        console.error('Failed to load course:', error);
+        await loadCourseDetail()
+    } catch (e) {
+        console.error('Failed to load course:', e)
+        router.replace({ name: 'dashboard' })
     }
-};
-
-// Add week (POST to backend)
-const addWeek = async () => {
-    try {
-        await courseApi.post(`${courseId.value}/add_week/`);
-        await loadCourse();  // Refresh weeks list
-    } catch (error) {
-        alert('Failed to add week.');
-        console.error(error);
-    }
-};
-
-// Select a week
-const selectWeek = (weekNumber) => {
-    selectedWeek.value = weekNumber;
-};
-
-// Save content logic (optional backend hookup later)
-const saveWeekContent = () => {
-    alert(`Content saved for Week ${selectedWeek.value}: ${weekContent.value[selectedWeek.value]}`);
-};
-
-// Initial load
-onMounted(() => {
-    loadCourse();
-});
+})
 </script>
-
 
 <style scoped>
 .course-page {
@@ -113,24 +120,8 @@ onMounted(() => {
     padding: 20px;
 }
 
-h1 {
-    color: #333;
-}
-
-ul {
-    list-style: none;
-    padding: 0;
-}
-
-li {
-    background: #f5f5f5;
-    margin-bottom: 10px;
-    padding: 10px;
-    border-radius: 6px;
-}
-
-.weeks-section {
-    margin-top: 30px;
+.weeks-buttons {
+    margin-bottom: 20px;
 }
 
 .week-button,
@@ -143,7 +134,15 @@ li {
     background-color: #f0f0f0;
 }
 
+.week-button.active {
+    background-color: #ddd;
+}
+
 .add-week-button {
     background-color: #e0ffe0;
+}
+
+.module-sections>* {
+    margin-top: 20px;
 }
 </style>

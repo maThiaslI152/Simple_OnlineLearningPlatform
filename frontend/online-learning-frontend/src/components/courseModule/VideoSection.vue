@@ -1,95 +1,60 @@
 <template>
-    <div class="video-section">
-        <h2>Videos</h2>
-
-        <ul>
-            <li v-for="video in videos" :key="video.id">
-                <strong>{{ video.title }}</strong>
-                <video v-if="video.video_file" :src="video.video_file" controls width="400"></video>
+    <section class="videos-section">
+        <h3>Videos (Week {{ week }})</h3>
+        <ul v-if="videos.length">
+            <li v-for="v in videos" :key="v.id">
+                <a :href="v.url" target="_blank">{{ v.title }}</a>
             </li>
         </ul>
+        <p v-else>No videos for this week.</p>
 
-        <div v-if="isTeacher">
-            <h3>Add New Video</h3>
-            <input v-model="newVideo.title" placeholder="Video Title" />
-            <input type="file" @change="handleFileUpload" />
-            <button @click="addVideo">Add Video</button>
+        <div v-if="isTeacher" class="add-video-form">
+            <h4>Upload Video URL</h4>
+            <input v-model="newVideo.title" placeholder="Title" />
+            <input v-model="newVideo.url" placeholder="Video URL" />
+            <button @click="addVideo">Save Video</button>
         </div>
-    </div>
+    </section>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { courseApi } from '@/axios';
+import { computed, ref } from 'vue'
+import { useAuth } from '@/composables/useAuth'
+import courseService from '@/services/course'
 
 const props = defineProps({
-    courseId: Number,
-    isTeacher: Boolean,
-});
+    videos: { type: Array, default: () => [] },
+    week: { type: Number, required: true },
+    courseId: { type: Number, required: true }
+})
+const emit = defineEmits(['refreshModules'])
 
-const videos = ref([]);
-const newVideo = ref({
-    title: '',
-    video_file: null,
-});
+const { user } = useAuth()
+const isTeacher = computed(() => user.value.roles?.is_teacher)
 
-const loadVideos = async () => {
-    try {
-        const response = await courseApi.get('video/');
-        videos.value = response.data.filter(video => video.course === props.courseId);
-    } catch (error) {
-        console.error('Error loading videos:', error);
-    }
-};
+const newVideo = ref({ title: '', url: '' })
 
-const handleFileUpload = (e) => {
-    newVideo.value.video_file = e.target.files[0];
-};
-
-const addVideo = async () => {
-    if (!newVideo.value.title || !newVideo.value.video_file) {
-        alert('Please provide both title and video file.');
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append('title', newVideo.value.title);
-    formData.append('video_file', newVideo.value.video_file);
-    formData.append('course', props.courseId);
-
-    try {
-        await courseApi.post('video/', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        alert('Video added successfully!');
-        newVideo.value = { title: '', video_file: null };
-        await loadVideos();
-    } catch (error) {
-        alert('Failed to add video.');
-        console.error(error);
-    }
-};
-
-onMounted(() => {
-    loadVideos();
-});
+async function addVideo() {
+    if (!newVideo.value.title.trim() || !newVideo.value.url.trim()) return
+    await courseService.createVideo(props.courseId, props.week, newVideo.value)
+    newVideo.value = { title: '', url: '' }
+    emit('refreshModules')
+}
 </script>
 
 <style scoped>
-.video-section {
-    text-align: left;
-    margin-top: 30px;
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+.videos-section {
+    margin-top: 20px;
 }
 
-video {
-    margin-top: 10px;
+.add-video-form input {
+    display: block;
+    width: 100%;
+    margin: 5px 0;
 }
 
-input,
-button {
-    margin-top: 10px;
+.add-video-form button {
+    margin-top: 5px;
+    padding: 6px 12px;
 }
 </style>

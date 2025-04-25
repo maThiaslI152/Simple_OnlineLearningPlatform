@@ -33,45 +33,26 @@ class StudentRegisterSerializer(serializers.ModelSerializer):
         return user
 
 class TeacherRegisterSerializer(serializers.ModelSerializer):
-    expertise = serializers.CharField(write_only=True)
-    department = serializers.CharField(write_only=True)
+    expertise = serializers.CharField(write_only=True, required=True)
+    department = serializers.CharField(write_only=True, required=True)
     password = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
         fields = ['username', 'email', 'password', 'profile_picture', 'expertise', 'department']
 
-    # Duplicate username check
     def validate_username(self, value):
         if User.objects.filter(username=value).exists():
             raise serializers.ValidationError("This username is already taken.")
         return value
 
     def create(self, validated_data):
-        expertise = validated_data.pop('expertise')
-        department = validated_data.pop('department')
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            password=validated_data['password'],
-            role='teacher',
-            profile_picture=validated_data.get('profile_picture')
-        )
-        TeacherProfile.objects.create(user=user, expertise=expertise, department=department)
-        return user
+        expertise = validated_data.pop('expertise', None)
+        department = validated_data.pop('department', None)
 
-class TeacherRegisterSerializer(serializers.ModelSerializer):
-    expertise = serializers.CharField(write_only=True)
-    department = serializers.CharField(write_only=True)
-    password = serializers.CharField(write_only=True)
+        if not expertise or not department:
+            raise serializers.ValidationError("Expertise and Department are required for teachers.")
 
-    class Meta:
-        model = User
-        fields = ['username', 'email', 'password', 'profile_picture', 'expertise', 'department']
-
-    def create(self, validated_data):
-        expertise = validated_data.pop('expertise')
-        department = validated_data.pop('department')
         user = User.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],

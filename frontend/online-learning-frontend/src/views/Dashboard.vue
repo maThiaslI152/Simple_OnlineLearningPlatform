@@ -1,53 +1,69 @@
 <template>
-  <div class="dashboard">
-    <h1>Welcome to Dashboard!</h1>
-    <p>You are logged in as: {{ username }} ({{ role }})</p>
-
-    <StudentDashboard v-if="role === 'student'" />
-    <TeacherDashboard v-if="role === 'teacher'" />
-
-    <button @click="logout">Logout</button>
+  <div>
+    <div class="dashboard">
+      <h1>Loading your dashboard...</h1>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import api from '@/axios';
 import { useRouter } from 'vue-router';
-
-import StudentDashboard from '@/components/StudentDashboard.vue';
-import TeacherDashboard from '@/components/TeacherDashboard.vue';
+import api from '@/axios';
 
 const router = useRouter();
 const username = ref('');
 const role = ref('');
 
-onMounted(async () => {
-  const token = localStorage.getItem('access');
-  if (!token) {
-    router.push('/');
-    return;
-  }
-  try {
-    const whoami = await api.get('whoami/');
-    username.value = whoami.data.username;
-    role.value = whoami.data.role.toLowerCase(); // Safe lowercase
-  } catch (error) {
-    console.error('Failed to fetch user info:', error);
-    router.push('/');
-  }
-});
-
+// Logout and cleanup tokens
 const logout = () => {
   localStorage.removeItem('access');
   localStorage.removeItem('refresh');
   router.push('/login');
 };
+
+// Check token, load user, and redirect by role
+const checkAuthAndRedirect = async () => {
+  const token = localStorage.getItem('access');
+  const refresh = localStorage.getItem('refresh');
+
+  if (!token || !refresh) {
+    logout();
+    return;
+  }
+
+  try {
+    const response = await api.get('whoami/');
+    username.value = response.data.username;
+    role.value = response.data.role;
+
+    if (role.value === 'teacher') {
+      router.push('/teacher-dashboard');
+    } else if (role.value === 'student') {
+      router.push('/student-dashboard');
+    } else {
+      alert('Unknown role, contact admin.');
+      logout();
+    }
+  } catch (error) {
+    console.error('Token invalid or expired:', error);
+    logout();
+  }
+};
+
+onMounted(() => {
+  checkAuthAndRedirect();
+});
 </script>
 
 <style scoped>
 .dashboard {
   text-align: center;
   margin-top: 100px;
+}
+
+button {
+  padding: 8px 16px;
+  cursor: pointer;
 }
 </style>

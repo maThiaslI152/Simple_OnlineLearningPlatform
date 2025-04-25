@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from .manager import CustomUserManager
 
 class CustomUser(AbstractUser):
     ROLE_CHOICES = (
@@ -10,13 +11,11 @@ class CustomUser(AbstractUser):
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
     profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
 
+    objects = CustomUserManager()
+
     def save(self, *args, **kwargs):
         if self.role:
             self.role = self.role.lower()  # Enforce lowercase role
-        super().save(*args, **kwargs)
-
-    def save(self, *args, **kwargs):
-        self.full_clean()  # This calls the clean() before saving!
         super().save(*args, **kwargs)
 
 class StudentProfile(models.Model):

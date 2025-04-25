@@ -1,4 +1,5 @@
-from django.urls import path
+from rest_framework.routers import DefaultRouter
+from django.urls import path, include
 from .views import (
     StudentRegisterView, 
     TeacherRegisterView, 
@@ -7,6 +8,10 @@ from .views import (
 )
 from .token_views import CustomTokenObtainPairView
 from rest_framework_simplejwt.views import TokenRefreshView
+from course.views import CourseViewSet
+
+router = DefaultRouter()
+router.register(r'course', CourseViewSet, basename='course')
 
 urlpatterns = [
     # Registration
@@ -20,6 +25,9 @@ urlpatterns = [
     # Who Am I
     path('whoami/', WhoAmIView.as_view(), name='whoami'),
 
-    #Logout
+    # Logout
     path('logout/', LogoutView.as_view(), name='logout'),
+
+    # Include router URLs (course endpoints)
+    path('', include(router.urls)),
 ]

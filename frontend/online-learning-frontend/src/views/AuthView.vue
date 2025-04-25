@@ -6,11 +6,7 @@
       <!-- Login Section -->
       <h2>Login</h2>
       <input v-model="loginData.username" placeholder="Username" />
-      <input
-        v-model="loginData.password"
-        type="password"
-        placeholder="Password"
-      />
+      <input v-model="loginData.password" type="password" placeholder="Password" />
       <button @click="login">Login</button>
 
       <hr />
@@ -19,29 +15,14 @@
       <h2>Register</h2>
       <input v-model="registerData.username" placeholder="Username" />
       <input v-model="registerData.email" placeholder="Email" />
-      <input
-        v-model="registerData.password"
-        type="password"
-        placeholder="Password"
-      />
-      <input
-        v-model="registerData.confirmPassword"
-        type="password"
-        placeholder="Confirm Password"
-      />
+      <input v-model="registerData.password" type="password" placeholder="Password" />
+      <input v-model="registerData.confirmPassword" type="password" placeholder="Confirm Password" />
       <label>
-        <input type="checkbox" v-model="registerData.isTeacher" /> I am a
-        teacher
+        <input type="checkbox" v-model="registerData.isTeacher" /> I am a teacher
       </label>
       <div v-if="registerData.isTeacher">
-        <input
-          v-model="registerData.expertise"
-          placeholder="Expertise (required for teachers)"
-        />
-        <input
-          v-model="registerData.department"
-          placeholder="Department (required for teachers)"
-        />
+        <input v-model="registerData.expertise" placeholder="Expertise (required)" />
+        <input v-model="registerData.department" placeholder="Department (required)" />
       </div>
       <button @click="register" :disabled="isRegistering">
         {{ isRegistering ? 'Registering...' : 'Register' }}
@@ -69,6 +50,7 @@ const registerData = ref({
   department: '',
 });
 
+//Login Func
 const login = async () => {
   localStorage.removeItem('access');
   localStorage.removeItem('refresh');
@@ -79,19 +61,18 @@ const login = async () => {
       localStorage.setItem('refresh', response.data.refresh);
 
       const whoami = await api.get('whoami/');
-
+      // eslint-disable-next-line
       const role = whoami.data.role.toLowerCase();
       router.push('/dashboard');
+      localStorage.setItem('username', whoami.data.username);
     }
   } catch (error) {
-    console.error(
-      'Login Failed:',
-      error.response ? error.response.data : error.message
-    );
+    console.error('Login Failed:', error.response ? error.response.data : error.message);
     alert('Login failed! Please check your username and password.');
   }
 };
 
+// Register Func
 const register = async () => {
   if (registerData.value.password !== registerData.value.confirmPassword) {
     alert('Passwords do not match!');
@@ -113,6 +94,11 @@ const register = async () => {
     };
 
     if (registerData.value.isTeacher) {
+      if (!registerData.value.expertise || !registerData.value.department) {
+        alert('Expertise and Department are required for teachers!');
+        isRegistering.value = false;
+        return;
+      }
       payload.expertise = registerData.value.expertise;
       payload.department = registerData.value.department;
     }
@@ -120,17 +106,11 @@ const register = async () => {
     await api.post(endpoint, payload);
     alert('Register Success! You can now log in.');
   } catch (error) {
-    console.error(
-      'Register Failed:',
-      error.response ? error.response.data : error.message
-    );
+    console.error('Register Failed:', error.response ? error.response.data : error.message);
     if (error.response && error.response.data.username) {
       alert('Username already exists. Please try a different one.');
     } else {
-      alert(
-        'Register Failed: ' +
-          (error.response ? JSON.stringify(error.response.data) : error.message)
-      );
+      alert('Register Failed: ' + (error.response ? JSON.stringify(error.response.data) : error.message));
     }
   } finally {
     isRegistering.value = false;

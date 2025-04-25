@@ -1,8 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import AuthView from '@/views/AuthView.vue';
 import Dashboard from '@/views/Dashboard.vue';
+import TeacherDashboard from '@/components/TeacherDashboard.vue';
+import StudentDashboard from '@/components/StudentDashboard.vue';
+import CoursePage from '@/views/CoursePage.vue';
 
 const routes = [
+  {
+    path: '/',
+    redirect: '/login',
+  },
   {
     path: '/login',
     name: 'login',
@@ -14,8 +21,20 @@ const routes = [
     component: Dashboard,
   },
   {
-    path: '/',
-    redirect: '/login',
+    path: '/teacher-dashboard',
+    name: 'TeacherDashboard',
+    component: TeacherDashboard,
+  },
+  {
+    path: '/student-dashboard',
+    name: 'StudentDashboard',
+    component: StudentDashboard,
+  },
+  {
+    path: '/course/:id',
+    name: 'CoursePage',
+    component: CoursePage,
+    props: route => ({ id: Number(route.params.id) })
   },
 ];
 
@@ -24,18 +43,16 @@ const router = createRouter({
   routes,
 });
 
-// Route Guard
+// Token Guard
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('access');
+  const protectedPages = ['dashboard', 'TeacherDashboard', 'StudentDashboard', 'coursePage'];
 
-  if (to.path === '/dashboard' && !token) {
-    // Not logged in → kick to login
+  if (protectedPages.includes(to.name) && !token) {
     next('/login');
-  } else if (to.path === '/login' && token) {
-    // Already logged in → block going back to login
+  } else if (to.name === 'login' && token) {
     next('/dashboard');
   } else {
-    // All other routes allowed
     next();
   }
 });

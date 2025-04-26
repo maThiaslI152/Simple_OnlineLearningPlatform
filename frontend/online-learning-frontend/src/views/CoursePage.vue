@@ -1,34 +1,54 @@
 <template>
     <div class="course-page">
-        <!-- Course header -->
-        <h1>Course: {{ course.title }}</h1>
-        <p>{{ course.description }}</p>
-        <hr />
-
-        <!-- Week buttons + Add Week (teachers only) -->
-        <div class="weeks-buttons">
-            <button v-for="w in weeks" :key="w" :class="['week-button', { active: w === selectedWeek }]"
-                @click="selectWeek(w)">
-                Week {{ w }}
-            </button>
-            <button v-if="isTeacher" class="add-week-button" @click="addWeek">
-                + Add Week
-            </button>
-        </div>
-
-        <!-- Modules for the selected week -->
-        <div v-if="selectedWeek !== null" class="module-sections">
-            <NoteSection :notes="notes" :week="selectedWeek" :course-id="courseId"
-                @refreshModules="loadModules(selectedWeek)" />
-            <VideoSection :videos="videos" :week="selectedWeek" :course-id="courseId"
-                @refreshModules="loadModules(selectedWeek)" />
-            <HomeworkSection :homeworks="homeworks" :week="selectedWeek" :course-id="courseId"
-                @refreshModules="loadModules(selectedWeek)" />
-            <TestSection :tests="tests" :week="selectedWeek" :course-id="courseId"
-                @refreshModules="loadModules(selectedWeek)" />
-        </div>
+      <!-- Course header -->
+      <h1>Course: {{ course.title }}</h1>
+      <p>{{ course.description }}</p>
+      <hr />
+  
+      <!-- Week buttons + Add Week (teachers only) -->
+      <div class="weeks-buttons">
+        <button
+          v-for="w in weeks"
+          :key="w"
+          :class="['week-button', { active: w === selectedWeek }]"
+          @click="selectWeek(w)"
+        >
+          Week {{ w }}
+        </button>
+        <button v-if="isTeacher" class="add-week-button" @click="addWeek">
+          + Add Week
+        </button>
+      </div>
+  
+      <!-- Modules for the selected week -->
+      <div v-if="selectedWeek !== null" class="module-sections">
+        <NoteSection
+          :notes="notes"
+          :week="selectedWeek"
+          :course-id="courseId"
+          @refreshModules="loadModules(selectedWeek)"
+        />
+        <VideoSection
+          :videos="videos"
+          :week="selectedWeek"
+          :course-id="courseId"
+          @refreshModules="loadModules(selectedWeek)"
+        />
+        <HomeworkSection
+          :homeworks="homeworks"
+          :week="selectedWeek"
+          :course-id="courseId"
+          @refreshModules="loadModules(selectedWeek)"
+        />
+        <TestSection
+          :tests="tests"
+          :week="selectedWeek"
+          :course-id="courseId"
+          @refreshModules="loadModules(selectedWeek)"
+        />
+      </div>
     </div>
-</template>
+  </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'

@@ -7,11 +7,14 @@ const courseApi = axios.create({
   headers: { 'Content-Type': 'application/json' }
 })
 
+// Attach JWT
 courseApi.interceptors.request.use(cfg => {
   const t = store.state.auth.accessToken
   if (t) cfg.headers.Authorization = `Bearer ${t}`
   return cfg
 })
+
+// Auto-refresh on 401
 courseApi.interceptors.response.use(null, async err => {
   const { response, config } = err
   if (response?.status === 401 && store.state.auth.refreshToken) {
@@ -28,22 +31,24 @@ courseApi.interceptors.response.use(null, async err => {
 
 export default {
   // Course CRUD
-  listAll:     ()           => courseApi.get(''), 
-  listMine:    ()           => courseApi.get('mine/'),
-  getDetail:   id           => courseApi.get(`${id}/`),
-  create:      payload      => courseApi.post('', payload),
+  listAll:     ()           => courseApi.get(''),               // GET /api/course/
+  listMine:    ()           => courseApi.get('mine/'),          // GET /api/course/mine/
+  getDetail:   id           => courseApi.get(`${id}/`),         // GET /api/course/:id/
+  create:      payload      => courseApi.post('', payload),     // POST /api/course/
+
   // Week management
-  addWeek:     id           => courseApi.post(`${id}/add_week/`),
+  addWeek:     id           => courseApi.post(`${id}/add_week/`),// POST /api/course/:id/add_week/
 
-  // Module listings
-  listNotes:   (c, w)       => courseApi.get('note/',     { params: { course: c, week_number: w } }),
-  listVideos:  (c, w)       => courseApi.get('video/',    { params: { course: c, week_number: w } }),
-  listHomework:(c, w)       => courseApi.get('homework/', { params: { course: c, week_number: w } }),
-  listTests:   (c, w)       => courseApi.get('test/',     { params: { course: c, week_number: w } }),
+  // Module listings (nested under course/:id)
+  listNotes:   (c, w)       => courseApi.get(`${c}/note/`,      { params: { week_number: w } }),
+  listVideos:  (c, w)       => courseApi.get(`${c}/video/`,     { params: { week_number: w } }),
+  listHomework:(c, w)       => courseApi.get(`${c}/homework/`,  { params: { week_number: w } }),
+  listTests:   (c, w)       => courseApi.get(`${c}/test/`,      { params: { week_number: w } }),
 
-  // Module creation
-  createNote:     (c, w, data) => courseApi.post('note/',     { ...data, course: c, week_number: w }),
-  createVideo:    (c, w, data) => courseApi.post('video/',    { ...data, course: c, week_number: w }),
-  createHomework: (c, w, data) => courseApi.post('homework/', { ...data, course: c, week_number: w }),
-  createTest:     (c, w, data) => courseApi.post('test/',     { ...data, course: c, week_number: w }),
+  // Module creation (pass course and week_number in body)
+  createNote:     (c, w, data) => courseApi.post(`${c}/note/`,     { ...data, course: c, week_number: w }),
+  createVideo:    (c, w, data) => courseApi.post(`${c}/video/`,    { ...data, course: c, week_number: w }),
+  createHomework: (c, w, data) => courseApi.post(`${c}/homework/`, { ...data, course: c, week_number: w }),
+  createTest:     (c, w, data) => courseApi.post(`${c}/test/`,     { ...data, course: c, week_number: w }),
 }
+

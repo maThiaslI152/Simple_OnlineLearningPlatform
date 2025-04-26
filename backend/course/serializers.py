@@ -1,5 +1,3 @@
-# backend/course/serializers.py
-
 from rest_framework import serializers
 from .models import Course, Note, Video, Homework, Test
 from user.models import CustomUser
@@ -9,9 +7,15 @@ from user.models import CustomUser
 # -----------------------------------
 
 class NoteSerializer(serializers.ModelSerializer):
+    file_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Note
-        fields = ['id', 'course', 'week', 'title', 'content', 'created_at']
+        fields = ['id', 'course', 'week', 'title', 'content', 'file', 'file_url', 'created_at']
+
+    def get_file_url(self, obj):
+        # obj.file.url already points to MinIO://media/...
+        return obj.file.url if obj.file else None
 
 class VideoSerializer(serializers.ModelSerializer):
     class Meta:

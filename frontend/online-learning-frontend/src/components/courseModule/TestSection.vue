@@ -1,44 +1,43 @@
 <template>
-    <section class="test-section">
+    <div>
         <h3>Tests (Week {{ week }})</h3>
-        <ul v-if="tests.length">
-            <li v-for="t in tests" :key="t.id">
-                <strong>{{ t.title }}</strong>
-                <p>{{ t.instructions }}</p>
-            </li>
+        <div v-if="!tests.length">No tests for this week.</div>
+        <ul v-else>
+            <li v-for="t in tests" :key="t.id">{{ t.title }}</li>
         </ul>
-        <p v-else>No tests for this week.</p>
 
-        <div v-if="isTeacher" class="add-test-form">
+        <!-- Only teachers can create tests -->
+        <div v-if="isTeacher">
             <h4>Create Test</h4>
-            <input v-model="newTest.title" placeholder="Title" />
-            <textarea v-model="newTest.instructions" placeholder="Instructions"></textarea>
-            <button @click="addTest">Save Test</button>
+            <input v-model="title" placeholder="Title" />
+            <textarea v-model="questions" placeholder="Questions (JSON)"></textarea>
+            <button @click="saveTest">Save Test</button>
         </div>
-    </section>
+    </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import courseService from '@/services/course'
 
-const props = defineProps({
-    tests: { type: Array, default: () => [] },
-    week: { type: Number, required: true },
-    courseId: { type: Number, required: true }
-})
+const props = defineProps({ tests: Array, week: Number, courseId: Number })
 const emit = defineEmits(['refreshModules'])
 
 const { user } = useAuth()
 const isTeacher = computed(() => user.value.roles?.is_teacher)
 
-const newTest = ref({ title: '', instructions: '' })
+const title = ref('')
+const questions = ref('')
 
-async function addTest() {
-    if (!newTest.value.title.trim() || !newTest.value.instructions.trim()) return
-    await courseService.createTest(props.courseId, props.week, newTest.value)
-    newTest.value = { title: '', instructions: '' }
+async function saveTest() {
+    if (!title.value || !questions.value) return
+    await courseService.createTest(props.courseId, props.week, {
+        title: title.value,
+        questions: JSON.parse(questions.value),
+    })
+    title.value = ''
+    questions.value = ''
     emit('refreshModules')
 }
 </script>

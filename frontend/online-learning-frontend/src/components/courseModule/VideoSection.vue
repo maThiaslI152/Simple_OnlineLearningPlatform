@@ -1,43 +1,43 @@
 <template>
-    <section class="videos-section">
+    <div>
         <h3>Videos (Week {{ week }})</h3>
-        <ul v-if="videos.length">
-            <li v-for="v in videos" :key="v.id">
-                <a :href="v.url" target="_blank">{{ v.title }}</a>
-            </li>
+        <div v-if="!videos.length">No videos for this week.</div>
+        <ul v-else>
+            <li v-for="v in videos" :key="v.id">{{ v.title }}</li>
         </ul>
-        <p v-else>No videos for this week.</p>
 
-        <div v-if="isTeacher" class="add-video-form">
+        <!-- Only teachers can upload videos -->
+        <div v-if="isTeacher">
             <h4>Upload Video URL</h4>
-            <input v-model="newVideo.title" placeholder="Title" />
-            <input v-model="newVideo.url" placeholder="Video URL" />
-            <button @click="addVideo">Save Video</button>
+            <input v-model="title" placeholder="Title" />
+            <input v-model="url" placeholder="Video URL" />
+            <button @click="saveVideo">Save Video</button>
         </div>
-    </section>
+    </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import courseService from '@/services/course'
 
-const props = defineProps({
-    videos: { type: Array, default: () => [] },
-    week: { type: Number, required: true },
-    courseId: { type: Number, required: true }
-})
+const props = defineProps({ videos: Array, week: Number, courseId: Number })
 const emit = defineEmits(['refreshModules'])
 
 const { user } = useAuth()
 const isTeacher = computed(() => user.value.roles?.is_teacher)
 
-const newVideo = ref({ title: '', url: '' })
+const title = ref('')
+const url = ref('')
 
-async function addVideo() {
-    if (!newVideo.value.title.trim() || !newVideo.value.url.trim()) return
-    await courseService.createVideo(props.courseId, props.week, newVideo.value)
-    newVideo.value = { title: '', url: '' }
+async function saveVideo() {
+    if (!title.value || !url.value) return
+    await courseService.createVideo(props.courseId, props.week, {
+        title: title.value,
+        url: url.value,
+    })
+    title.value = ''
+    url.value = ''
     emit('refreshModules')
 }
 </script>

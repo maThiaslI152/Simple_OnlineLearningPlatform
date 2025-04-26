@@ -32,11 +32,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # api
+    'django_filters',
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'minio_storage',
+    'storages',
 
     # app-module
     'core',
@@ -93,14 +95,29 @@ DATABASES = {
 }
 
 #MinIO
-MEDIA_URL = "http://localhost:9000/media/"
-DEFAULT_FILE_STORAGE = 'minio_storage.storage.MinioMediaStorage'
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 
-MINIO_ENDPOINT = 'http://127.0.0.1:9000'  # Change to your MinIO host
-MINIO_ACCESS_KEY = 'minioadmin'
-MINIO_SECRET_KEY = 'minioadmin'
-MINIO_MEDIA_BUCKET_NAME = 'media'
-MINIO_USE_HTTPS = False  # Set True if using HTTPS
+MEDIA_URL = "http://127.0.0.1:9000/media/"
+STATIC_URL = "/static/"
+
+AWS_S3_ENDPOINT_URL       = "http://127.0.0.1:9000"
+AWS_ACCESS_KEY_ID         = "minioadmin"
+AWS_SECRET_ACCESS_KEY     = "minioadmin"
+AWS_STORAGE_BUCKET_NAME   = "media"
+AWS_S3_REGION_NAME        = ""                # blank is OK
+AWS_S3_USE_SSL            = False
+AWS_S3_VERIFY             = False
+AWS_S3_SIGNATURE_VERSION  = "s3v4"
+AWS_S3_ADDRESSING_STYLE   = "path"
+AWS_QUERYSTRING_AUTH      = False
+AWS_S3_CUSTOM_DOMAIN      = "127.0.0.1:9000/media"
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

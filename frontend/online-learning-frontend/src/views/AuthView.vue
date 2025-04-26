@@ -11,7 +11,7 @@
 
       <hr />
 
-      <!-- Register Section (unchanged) -->
+      <!-- Register Section -->
       <h2>Register</h2>
       <input v-model="registerData.username" placeholder="Username" />
       <input v-model="registerData.email" placeholder="Email" />
@@ -33,12 +33,12 @@
 </template>
 
 <script setup>
-import { ref, watchEffect } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
-const { login, register, isLoggedIn } = useAuth()
+const { login, register } = useAuth()
 
 const loginData = ref({ username: '', password: '' })
 const registerData = ref({
@@ -52,38 +52,45 @@ const registerData = ref({
 })
 const isRegistering = ref(false)
 
-watchEffect(() => {
-  console.log('AuthView — isLoggedIn:', isLoggedIn.value)
-  if (isLoggedIn.value) {
-    console.log('Redirecting to /dashboard')
-    router.push('/dashboard')
-  }
-})
 async function onLogin() {
-  try { await login(loginData.value) }
-  catch { alert('Login failed. Check credentials.') }
+  try {
+    await login(loginData.value)
+    router.push('/dashboard')
+  } catch {
+    alert('Login failed. Check your username and password.')
+  }
 }
 
 async function onRegister() {
-  if (registerData.value.password !== registerData.value.confirmPassword)
-    return alert('Passwords must match.')
+  if (registerData.value.password !== registerData.value.confirmPassword) {
+    alert('Passwords must match.')
+    return
+  }
   if (isRegistering.value) return
   isRegistering.value = true
 
   try {
     await register(registerData.value)
-    alert('Registered! Please log in.')
-  }
-  catch (e) {
+    alert('Registered successfully! Please log in.')
+    registerData.value = {
+      username: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      isTeacher: false,
+      expertise: '',
+      department: ''
+    }
+  } catch (e) {
     const msg = e.response?.data?.username
       ? 'Username already exists.'
       : e.message
     alert('Register failed: ' + msg)
+  } finally {
+    isRegistering.value = false
   }
-  finally { isRegistering.value = false }
 }
 </script>
-
 
 <style scoped>
 .auth-container {
@@ -118,6 +125,11 @@ button {
   border: none;
   border-radius: 6px;
   cursor: pointer;
+}
+
+button:disabled {
+  background-color: #888;
+  cursor: not-allowed;
 }
 
 hr {

@@ -1,56 +1,24 @@
+<script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import Navbar from '@/components/Navbar.vue'
+
+const route = useRoute()
+
+const showNavbar = computed(() => {
+  return route.path !== '/login' && route.path !== '/register'
+})
+</script>
+
 <template>
-  <div id="app">
-    <nav v-if="showNavbar" class="navbar navbar-expand-lg navbar-light bg-light shadow-sm mb-4">
-      <div class="container-fluid">
-        <router-link to="/" class="navbar-brand fw-bold">Online Learning</router-link>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-          aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            <li class="nav-item">
-              <router-link to="/" class="nav-link">Home</router-link>
-            </li>
-          </ul>
-          <span class="navbar-text me-3">
-            You are logged in as: <strong>{{ username }}</strong>
-          </span>
-          <button class="btn btn-outline-danger" @click="logout">Logout</button>
-        </div>
-      </div>
-    </nav>
-
-    <!-- Page Content -->
+  <div>
+    <div>
+      <Navbar v-if="showNavbar" />
+    </div>
     <router-view />
   </div>
 </template>
 
-<script setup>
-import { useAuth } from '@/composables/useAuth'
-const { logout } = useAuth()
-</script>
-
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
-
-.navbar-brand {
-  font-weight: bold;
-}
-
-nav {
-  padding: 30px;
-}
-
-nav a {
-  font-weight: bold;
-  color: #2c3e50;
-}
+<style scoped>
+/* Optional: You can keep global styles here if needed */
 </style>

@@ -1,165 +1,88 @@
-<template>
-  <div>
-    <h3>Notes (Week {{ week }})</h3>
-
-    <div v-if="!notes.length" class="alert alert-info">
-      No notes for this week.
-    </div>
-
-    <!-- Accordion for notes -->
-    <div v-else class="accordion" id="notesAccordion">
-      <div
-        class="accordion-item"
-        v-for="n in notes"
-        :key="n.id"
-      >
-        <h2
-          class="accordion-header"
-          :id="`heading${n.id}`"
-        >
-          <button
-            class="accordion-button collapsed"
-            type="button"
-            @click="toggle(n.id)"
-            :aria-expanded="visibleNotes.has(n.id)"
-            :aria-controls="`collapse${n.id}`"
-          >
-            {{ n.title }}
-          </button>
-        </h2>
-        <div
-          :id="`collapse${n.id}`"
-          class="accordion-collapse collapse"
-          :class="{ show: visibleNotes.has(n.id) }"
-          :aria-labelledby="`heading${n.id}`"
-          data-bs-parent="#notesAccordion"
-        >
-          <div class="accordion-body">
-            <p>{{ n.content }}</p>
-            <a
-              v-if="n.file_url"
-              :href="n.file_url"
-              target="_blank"
-              class="btn btn-sm btn-outline-primary"
-            >
-              View PDF
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Only teachers can add notes -->
-    <div v-if="isTeacher" class="mt-4 add-note-form">
-      <h4>Add a Note</h4>
-      <div class="mb-2">
-        <input
-          v-model="title"
-          placeholder="Title"
-          class="form-control"
-        />
-      </div>
-      <div class="mb-2">
-        <textarea
-          v-model="content"
-          placeholder="Content"
-          class="form-control"
-          rows="4"
-        ></textarea>
-      </div>
-      <div class="mb-3">
-        <input
-          type="file"
-          accept="application/pdf"
-          @change="onFileChange"
-          class="form-control"
-        />
-      </div>
-      <button
-        @click="saveNote"
-        class="btn btn-primary"
-      >
-        Save Note
-      </button>
-    </div>
-  </div>
-</template>
-
 <script setup>
 import { ref, computed } from 'vue'
 import { useAuth } from '@/composables/useAuth'
-import store from '@/store'
+import courseService from '@/services/course'
 
-const props = defineProps({ notes: Array, week: Number, courseId: Number })
+const props = defineProps({
+  notes: Array,
+  week: Number,
+  courseId: Number
+})
 const emit = defineEmits(['refreshModules'])
 
 const { user } = useAuth()
 const isTeacher = computed(() => user.value.roles?.is_teacher)
 
-// Track which note accordions are open
-const visibleNotes = ref(new Set())
-function toggle(id) {
-  if (visibleNotes.value.has(id)) {
-    visibleNotes.value.delete(id)
-  } else {
-    visibleNotes.value.add(id)
-  }
-}
-
-// Form fields
 const title = ref('')
-const content = ref('')
+const description = ref('')
 const file = ref(null)
-function onFileChange(e) {
-  const f = e.target.files[0]
-  if (f && f.type === 'application/pdf') {
-    file.value = f
-  } else {
-    file.value = null
-  }
+
+function onFileChange(event) {
+  file.value = event.target.files[0] || null
 }
 
 async function saveNote() {
-  if (!title.value || !content.value) return
-
-  const form = new FormData()
-  form.append('title', title.value)
-  form.append('content', content.value)
-  form.append('course', props.courseId)
-  form.append('week_number', props.week)
-  if (file.value) {
-    form.append('file', file.value)
+  if (!title.value || !description.value || !file.value) {
+    alert('Please fill in title, description, and select a PDF file.')
+    return
   }
 
-  const token = store.state.auth.accessToken
-  await fetch(
-    `/api/course/${props.courseId}/note/`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
-      body: form
-    }
-  )
+  const formData = new FormData()
+  formData.append('title', title.value)
+  formData.append('description', description.value)
+  formData.append('file', file.value)
 
-  title.value = ''
-  content.value = ''
-  file.value = null
-  emit('refreshModules')
+  try {
+    await courseService.createNote(props.courseId, props.week, formData)
+    alert('Note uploaded successfully!')
+    title.value = ''
+    description.value = ''
+    file.value = null
+    emit('refreshModules')
+  } catch (error) {
+    console.error('Upload failed:', error.response?.data || error)
+    alert('Failed to upload note.')
+  }
 }
 </script>
 
+<template>
+  <div class="container mt-4">
+    <h3>Notes (Week {{ week }})</h3>
+    <div v-if="!notes.length" class="alert alert-info">No notes for this week.</div>
+    <ul v-else class="list-group mb-4">
+      <li v-for="n in notes" :key="n.id" class="list-group-item">
+        <div class="d-flex justify-content-between align-items-center">
+          <span>{{ n.title }}</span>
+          <a :href="n.file_url" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary">
+            View PDF
+          </a>
+        </div>
+        <p class="mt-2 text-muted">{{ n.description }}</p>
+      </li>
+    </ul>
+
+    <div v-if="isTeacher" class="card p-3">
+      <h5 class="card-title">Add Note (PDF Upload)</h5>
+      <div class="mb-3">
+        <label class="form-label">Title</label>
+        <input v-model="title" class="form-control" placeholder="Enter title" />
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea v-model="description" class="form-control" placeholder="Enter description"></textarea>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Choose PDF File</label>
+        <input type="file" class="form-control" accept="application/pdf" @change="onFileChange" />
+      </div>
+      <button @click="saveNote" class="btn btn-primary">Save Note</button>
+    </div>
+  </div>
+</template>
+
 <style scoped>
-.add-note-form {
-  margin-top: 20px;
-}
-.accordion-item {
-  border: 1px solid #ddd;
-  border-radius: 0.25rem;
-  margin-bottom: 0.5rem;
-}
-.accordion-button {
-  background-color: #f8f9fa;
+.container {
+  max-width: 700px;
 }
 </style>

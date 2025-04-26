@@ -1,168 +1,126 @@
-<template>
-    <div class="course-page">
-      <!-- Course header -->
-      <h1>Course: {{ course.title }}</h1>
-      <p>{{ course.description }}</p>
-      <hr />
-  
-      <!-- Week buttons + Add Week (teachers only) -->
-      <div class="weeks-buttons">
-        <button
-          v-for="w in weeks"
-          :key="w"
-          :class="['week-button', { active: w === selectedWeek }]"
-          @click="selectWeek(w)"
-        >
-          Week {{ w }}
-        </button>
-        <button v-if="isTeacher" class="add-week-button" @click="addWeek">
-          + Add Week
-        </button>
-      </div>
-  
-      <!-- Modules for the selected week -->
-      <div v-if="selectedWeek !== null" class="module-sections">
-        <NoteSection
-          :notes="notes"
-          :week="selectedWeek"
-          :course-id="courseId"
-          @refreshModules="loadModules(selectedWeek)"
-        />
-        <VideoSection
-          :videos="videos"
-          :week="selectedWeek"
-          :course-id="courseId"
-          @refreshModules="loadModules(selectedWeek)"
-        />
-        <HomeworkSection
-          :homeworks="homeworks"
-          :week="selectedWeek"
-          :course-id="courseId"
-          @refreshModules="loadModules(selectedWeek)"
-        />
-        <TestSection
-          :tests="tests"
-          :week="selectedWeek"
-          :course-id="courseId"
-          @refreshModules="loadModules(selectedWeek)"
-        />
-      </div>
-    </div>
-  </template>
-
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, onMounted, watch } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import courseService from '@/services/course'
-
+import HomeworkSection from '@/components/courseModule/HomeworkSection.vue'
 import NoteSection from '@/components/courseModule/NoteSection.vue'
 import VideoSection from '@/components/courseModule/VideoSection.vue'
-import HomeworkSection from '@/components/courseModule/HomeworkSection.vue'
 import TestSection from '@/components/courseModule/TestSection.vue'
 
-// Route param
-const route = useRoute()
-const router = useRouter()
-const courseId = computed(() => Number(route.params.id))
+const props = defineProps({ id: Number })
+const { user } = useAuth()
 
-// Auth & role
-const { isLoggedIn, user } = useAuth()
-const isTeacher = computed(() => user.value.roles?.is_teacher)
-
-// Data
-const course = ref({ title: '', description: '' })
+const courseId = ref(props.id)
+const course = ref({})
 const weeks = ref([])
-const selectedWeek = ref(null)
+const selectedWeek = ref(1)
 
-// Module lists
 const notes = ref([])
 const videos = ref([])
 const homeworks = ref([])
 const tests = ref([])
 
-// Load course detail and available weeks
-async function loadCourseDetail() {
-    if (!isLoggedIn.value) {
-        return router.replace({ name: 'login' })
-    }
-    const { data } = await courseService.getDetail(courseId.value)
-    course.value = data
-    weeks.value = data.available_weeks || []
-    // auto-select first week if none
-    if (weeks.value.length && selectedWeek.value === null) {
-        selectWeek(weeks.value[0])
-    }
+async function loadCourse() {
+  const { data } = await courseService.getDetail(courseId.value)
+  course.value = data
 }
 
-// Load all modules for a given week in parallel
-async function loadModules(week) {
-    const [n, v, h, t] = await Promise.all([
-        courseService.listNotes(courseId.value, week),
-        courseService.listVideos(courseId.value, week),
-        courseService.listHomework(courseId.value, week),
-        courseService.listTests(courseId.value, week),
-    ])
-    notes.value = n.data
-    videos.value = v.data
-    homeworks.value = h.data
-    tests.value = t.data
+async function loadWeeks() {
+  const { data } = await courseService.getDetail(courseId.value)
+  weeks.value = Array.from({ length: data.total_weeks }, (_, i) => i + 1)
 }
 
-// Handle week button click
+async function loadModules() {
+  const week = selectedWeek.value
+  const [noteRes, videoRes, homeworkRes, testRes] = await Promise.all([
+    courseService.listNotes(courseId.value, week),
+    courseService.listVideos(courseId.value, week),
+    courseService.listHomework(courseId.value, week),
+    courseService.listTests(courseId.value, week)
+  ])
+  notes.value = noteRes.data
+  videos.value = videoRes.data
+  homeworks.value = homeworkRes.data
+  tests.value = testRes.data
+}
+
 function selectWeek(week) {
-    selectedWeek.value = week
-    loadModules(week)
+  selectedWeek.value = week
+  loadModules()
 }
 
-// Teachers can add a new week
-async function addWeek() {
-    await courseService.addWeek(courseId.value)
-    // reload weeks list
-    await loadCourseDetail()
-}
-
-// On mount: fetch everything
-onMounted(async () => {
+async function handleDeleteHomework(homeworkId) {
+  if (confirm('Are you sure you want to delete this homework?')) {
     try {
-        await loadCourseDetail()
-    } catch (e) {
-        console.error('Failed to load course:', e)
-        router.replace({ name: 'dashboard' })
+      await courseService.deleteHomework(courseId.value, homeworkId)
+      alert('Homework deleted.')
+      loadModules()
+    } catch (error) {
+      console.error('Failed to delete homework:', error.response?.data || error)
+      alert('Failed to delete homework.')
     }
+  }
+}
+
+async function addWeek() {
+  if (confirm('Add a new week to this course?')) {
+    try {
+      await courseService.addWeek(courseId.value)
+      await loadWeeks()
+      alert('New week added.')
+    } catch (error) {
+      console.error('Failed to add week:', error.response?.data || error)
+      alert('Failed to add week.')
+    }
+  }
+}
+
+watch(
+  () => props.id,
+  (newId) => {
+    courseId.value = newId
+    loadCourse()
+    loadWeeks()
+    loadModules()
+  }
+)
+
+onMounted(() => {
+  loadCourse()
+  loadWeeks()
+  loadModules()
 })
 </script>
 
+<template>
+  <div class="container mt-4">
+    <h2>Course: {{ course.title }}</h2>
+
+    <div class="mb-3 d-flex align-items-center">
+      <div>
+        <button v-for="week in weeks" :key="week" @click="selectWeek(week)"
+          :class="['btn', selectedWeek === week ? 'btn-primary' : 'btn-outline-primary', 'me-2']">
+          Week {{ week }}
+        </button>
+      </div>
+      <button v-if="user.roles?.is_teacher" @click="addWeek" class="btn btn-success btn-sm ms-3">
+        Add Week
+      </button>
+    </div>
+
+    <NoteSection :notes="notes" :week="selectedWeek" :courseId="courseId.value" @refreshModules="loadModules" />
+
+    <VideoSection :videos="videos" :week="selectedWeek" :courseId="courseId.value" @refreshModules="loadModules" />
+
+    <HomeworkSection :homeworks="homeworks" :week="selectedWeek" :courseId="courseId.value"
+      @refreshModules="loadModules" @deleteHomework="handleDeleteHomework" />
+
+    <TestSection :tests="tests" :week="selectedWeek" :courseId="courseId.value" @refreshModules="loadModules" />
+  </div>
+</template>
+
 <style scoped>
-.course-page {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-.weeks-buttons {
-    margin-bottom: 20px;
-}
-
-.week-button,
-.add-week-button {
-    margin: 5px;
-    padding: 10px 15px;
-    border: 1px solid #aaa;
-    border-radius: 6px;
-    cursor: pointer;
-    background-color: #f0f0f0;
-}
-
-.week-button.active {
-    background-color: #ddd;
-}
-
-.add-week-button {
-    background-color: #e0ffe0;
-}
-
-.module-sections>* {
-    margin-top: 20px;
+.container {
+  max-width: 900px;
 }
 </style>

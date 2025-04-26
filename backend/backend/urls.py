@@ -7,6 +7,6 @@ from core.views import FileUploadTestView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/',   include('user.urls')), 
-    path('api/course/', include('course.urls')),
+    path('api/', include('course.urls')),
     path('api/upload/', FileUploadTestView.as_view(), name='upload-test'),
 ]

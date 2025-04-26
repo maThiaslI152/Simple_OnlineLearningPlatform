@@ -1,6 +1,9 @@
 from rest_framework import serializers
-from .models import Course, Note, Video, Homework, Test
+from .models import Course, Note, Video, Homework, Test, Submission
 from user.models import CustomUser
+from django.conf import settings
+from minio import Minio
+from datetime import timedelta
 
 # -----------------------------------
 # Module serializers (flat, all fields)
@@ -12,26 +15,110 @@ class NoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Note
         fields = ['id', 'course', 'week', 'title', 'content', 'file', 'file_url', 'created_at']
+        extra_kwargs = {
+            'course': {'read_only': True},
+            'week':   {'read_only': True},
+        }
 
     def get_file_url(self, obj):
-        # obj.file.url already points to MinIO://media/...
-        return obj.file.url if obj.file else None
+        # Return a presigned URL valid for a short duration
+        if not obj.file:
+            return None
+        # Initialize MinIO client
+        endpoint = settings.AWS_S3_ENDPOINT_URL.replace('http://', '').replace('https://', '')
+        client = Minio(
+            endpoint=endpoint,
+            access_key=settings.AWS_ACCESS_KEY_ID,
+            secret_key=settings.AWS_SECRET_ACCESS_KEY,
+            secure=settings.AWS_S3_USE_SSL
+        )
+        # Generate presigned GET URL
+        return client.presigned_get_object(
+            bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
+            object_name=obj.file.name,
+            expires=timedelta(minutes=15)
+        )
 
 class VideoSerializer(serializers.ModelSerializer):
+    file_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Video
-        fields = ['id', 'course', 'week', 'title', 'url', 'created_at']
+        fields = ['id', 'course', 'week', 'title', 'file', 'file_url', 'created_at']
+        extra_kwargs = {
+            'course': {'read_only': True},
+            'week': {'read_only': True},
+        }
+
+    def get_file_url(self, obj):
+        if not obj.file:
+            return None
+        endpoint = settings.AWS_S3_ENDPOINT_URL.replace('http://', '').replace('https://', '')
+        client = Minio(
+            endpoint=endpoint,
+            access_key=settings.AWS_ACCESS_KEY_ID,
+            secret_key=settings.AWS_SECRET_ACCESS_KEY,
+            secure=settings.AWS_S3_ENDPOINT_URL.startswith('https')
+        )
+        return client.presigned_get_object(settings.AWS_STORAGE_BUCKET_NAME, obj.file.name, expires=timedelta(minutes=15))
+
+file_url = serializers.SerializerMethodField()
 
 class HomeworkSerializer(serializers.ModelSerializer):
+    file_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Homework
-        fields = ['id', 'course', 'week', 'title', 'description', 'due_date', 'created_at']
+        fields = ['id', 'course', 'week', 'title', 'description', 'file', 'file_url', 'created_at']
+        extra_kwargs = {
+            'course': {'read_only': True},
+            'week': {'read_only': True},
+        }
+
+    def get_file_url(self, obj):
+        if not obj.file:
+            return None
+        client = Minio(
+            settings.AWS_S3_ENDPOINT_URL.replace('http://', '').replace('https://', ''),
+            access_key=settings.AWS_ACCESS_KEY_ID,
+            secret_key=settings.AWS_SECRET_ACCESS_KEY,
+            secure=settings.AWS_S3_ENDPOINT_URL.startswith('https')
+        )
+        return client.presigned_get_object(settings.AWS_STORAGE_BUCKET_NAME, obj.file.name, expires=timedelta(minutes=15))
+
+
 
 class TestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Test
         fields = ['id', 'course', 'week', 'title', 'questions', 'attempt_limit', 'time_limit', 'created_at']
 
+class SubmissionSerializer(serializers.ModelSerializer):
+    file_url = serializers.SerializerMethodField()
+    student_name = serializers.CharField(source='student.username', read_only=True)
+
+    class Meta:
+        model = Submission
+        fields = ['id', 'homework', 'student', 'student_name', 'file', 'file_url', 'submitted_at']
+        extra_kwargs = {
+            'student': {'read_only': True},
+            'homework': {'read_only': True},
+        }
+
+    def get_file_url(self, obj):
+        if not obj.file:
+            return None
+        client = Minio(
+            settings.AWS_S3_ENDPOINT_URL.replace('http://', '').replace('https://', ''),
+            access_key=settings.AWS_ACCESS_KEY_ID,
+            secret_key=settings.AWS_SECRET_ACCESS_KEY,
+            secure=settings.AWS_S3_ENDPOINT_URL.startswith('https')
+        )
+        return client.presigned_get_object(
+            settings.AWS_STORAGE_BUCKET_NAME,
+            obj.file.name,
+            expires=timedelta(minutes=15)
+        )
 
 # -----------------------------------
 # Course serializers
@@ -42,7 +129,6 @@ class CourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = ['id', 'title', 'description', 'teacher', 'created_at']
-
 
 class CourseDetailSerializer(serializers.ModelSerializer):
     # used for retrieve

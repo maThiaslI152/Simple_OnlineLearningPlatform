@@ -1,3 +1,4 @@
+// src/store/index.js
 import { createStore } from 'vuex'
 import api from '../axios'
 
@@ -6,25 +7,28 @@ export default createStore({
     auth: {
       namespaced: true,
       state: () => ({
-        accessToken:  null,
-        refreshToken: null,
-        user:         {}
+        accessToken:  localStorage.getItem('accessToken'),
+        refreshToken: localStorage.getItem('refreshToken'),
+        user:         JSON.parse(localStorage.getItem('user') || '{}')
       }),
       mutations: {
         setTokens(state, { access, refresh }) {
           state.accessToken  = access
           state.refreshToken = refresh
-        },
-        setAccessToken(state, access) {
-          state.accessToken = access
+          localStorage.setItem('accessToken', access)
+          localStorage.setItem('refreshToken', refresh)
         },
         setUser(state, user) {
           state.user = user
+          localStorage.setItem('user', JSON.stringify(user))
         },
         clearAuth(state) {
           state.accessToken  = null
           state.refreshToken = null
           state.user         = {}
+          localStorage.removeItem('accessToken')
+          localStorage.removeItem('refreshToken')
+          localStorage.removeItem('user')
         }
       },
       actions: {
@@ -39,14 +43,13 @@ export default createStore({
         },
         logout({ commit }) {
           commit('clearAuth')
+          delete api.defaults.headers.common['Authorization']
         },
         async register(_, regData) {
-          // pick endpoint based on isTeacher flag
           const endpoint = regData.isTeacher
             ? 'register/teacher/'
             : 'register/student/'
-          // build payload
-          const payload = {
+          await api.post(endpoint, {
             username:   regData.username,
             email:      regData.email,
             password:   regData.password,
@@ -54,10 +57,11 @@ export default createStore({
               expertise:  regData.expertise,
               department: regData.department
             })
-          }
-          // call API; errors bubble up
-          await api.post(endpoint, payload)
+          })
         }
+      },
+      getters: {
+        isLoggedIn: state => !!state.accessToken
       }
     }
   }

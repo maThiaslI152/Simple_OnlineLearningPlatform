@@ -108,12 +108,13 @@ onMounted(() => {
       </button>
     </div>
 
-    <NoteSection :notes="notes" :week="selectedWeek" :courseId="courseId.value" @refreshModules="loadModules" />
-
     <VideoSection :videos="videos" :week="selectedWeek" :courseId="courseId.value" @refreshModules="loadModules" />
 
-    <HomeworkSection :homeworks="homeworks" :week="selectedWeek" :courseId="courseId.value"
-      @refreshModules="loadModules" @deleteHomework="handleDeleteHomework" />
+    <NoteSection :notes="notes" :week="selectedWeek" :course-id="courseId" @refresh-modules="loadModules" />
+
+    <HomeworkSection :homeworks="homeworks" :week="selectedWeek" :course-id="courseId" @refresh-modules="loadModules"
+      @delete-homework="handleDeleteHomework" />
+
 
     <TestSection :tests="tests" :week="selectedWeek" :courseId="courseId.value" @refreshModules="loadModules" />
   </div>

@@ -105,7 +105,12 @@ class BaseModuleViewSet(viewsets.ModelViewSet):
         print("DEBUG request.FILES:", self.request.FILES)
 
         course_pk   = self.kwargs['course_pk']
-        week_number = self.request.data.get('week_number')
+        week_number = self.request.query_params.get('week_number')
+        if not week_number:
+            from rest_framework import serializers
+            raise serializers.ValidationError({
+                'week_number': 'This query parameter is required (?week_number=<n>).'
+            })
         week        = Week.objects.get(course_id=course_pk, week_number=week_number)
 
         instance = serializer.save(course_id=course_pk, week=week)

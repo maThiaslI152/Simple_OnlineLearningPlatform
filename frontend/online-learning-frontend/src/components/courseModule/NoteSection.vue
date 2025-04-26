@@ -30,7 +30,7 @@ async function saveNote() {
   const formData = new FormData()
   formData.append('title', title.value)
   formData.append('description', description.value)
-  formData.append('file', file.value)
+  formData.append('content', description.value)
 
   try {
     await courseService.createNote(props.courseId, props.week, formData)

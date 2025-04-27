@@ -46,17 +46,17 @@ export default createStore({
           delete api.defaults.headers.common['Authorization']
         },
         async register(_, regData) {
-          await api.post('register/', {
+          const endpoint = regData.isTeacher
+            ? 'register/teacher/'
+            : 'register/student/'
+          await api.post(endpoint, {
             username:   regData.username,
             email:      regData.email,
             password:   regData.password,
-            is_teacher: regData.isTeacher,
-            ...(regData.isTeacher
-              ? {
-                  expertise:  regData.expertise,
-                  department: regData.department
-                }
-              : {})
+            ...(regData.isTeacher && {
+              expertise:  regData.expertise,
+              department: regData.department
+            })
           })
         }
       },
@@ -66,3 +66,4 @@ export default createStore({
     }
   }
 })
+ 

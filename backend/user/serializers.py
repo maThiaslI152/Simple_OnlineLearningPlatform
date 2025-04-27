@@ -1,3 +1,4 @@
+#user/serializers
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import StudentProfile, TeacherProfile
@@ -60,5 +61,8 @@ class TeacherRegisterSerializer(serializers.ModelSerializer):
             role='teacher',
             profile_picture=validated_data.get('profile_picture')
         )
-        TeacherProfile.objects.create(user=user, expertise=expertise, department=department)
+
+        if not TeacherProfile.objects.filter(user=user).exists():
+            TeacherProfile.objects.create(user=user, expertise=expertise, department=department)
+
         return user

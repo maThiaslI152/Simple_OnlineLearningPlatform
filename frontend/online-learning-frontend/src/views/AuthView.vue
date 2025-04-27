@@ -1,33 +1,114 @@
 <template>
-  <div class="auth-container">
-    <h1>Online Learning Platform</h1>
+  <div>
+    <div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+      <div class="col-md-5">
+        <div class="card shadow-sm p-4">
+          <h1 class="text-center mb-4">Online Learning Platform</h1>
 
-    <div class="form-box">
-      <!-- Login Section -->
-      <h2>Login</h2>
-      <input v-model="loginData.username" placeholder="Username" />
-      <input v-model="loginData.password" type="password" placeholder="Password" />
-      <button @click="onLogin">Login</button>
+          <!-- Login Form -->
+          <form @submit.prevent="onLogin">
+            <div class="mb-3">
+              <label for="loginUsername" class="form-label">Username</label>
+              <input id="loginUsername" v-model="loginData.username" type="text" class="form-control"
+                :disabled="loggingIn" required />
+            </div>
+            <div class="mb-3">
+              <label for="loginPassword" class="form-label">Password</label>
+              <input id="loginPassword" v-model="loginData.password" type="password" class="form-control"
+                :disabled="loggingIn" required />
+            </div>
+            <button type="submit" class="btn btn-primary w-100" :disabled="loggingIn">
+              {{ loggingIn ? 'Logging in…' : 'Login' }}
+            </button>
+            <div v-if="loginError" class="mt-2 text-danger">{{ loginError }}</div>
+          </form>
 
-      <hr />
+          <hr class="my-4" />
 
-      <!-- Register Section -->
-      <h2>Register</h2>
-      <input v-model="registerData.username" placeholder="Username" />
-      <input v-model="registerData.email" placeholder="Email" />
-      <input v-model="registerData.password" type="password" placeholder="Password" />
-      <input v-model="registerData.confirmPassword" type="password" placeholder="Confirm Password" />
-      <label>
-        <input type="checkbox" v-model="registerData.isTeacher" />
-        I am a teacher
-      </label>
-      <div v-if="registerData.isTeacher">
-        <input v-model="registerData.expertise" placeholder="Expertise" />
-        <input v-model="registerData.department" placeholder="Department" />
+          <!-- Register Button -->
+          <button class="btn btn-secondary w-100" @click="showRegisterModal = true">
+            Register
+          </button>
+        </div>
       </div>
-      <button @click="onRegister" :disabled="isRegistering">
-        {{ isRegistering ? 'Registering...' : 'Register' }}
-      </button>
+    </div>
+
+    <!-- Register Modal -->
+    <div v-if="showRegisterModal" class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Register</h5>
+            <button type="button" class="btn-close" @click="closeRegisterModal"></button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="onRegister">
+              <div class="mb-3">
+                <label for="regUsername" class="form-label">Username</label>
+                <input id="regUsername" v-model="registerData.username" type="text" class="form-control"
+                  :disabled="registering" required />
+              </div>
+              <div class="mb-3">
+                <label for="regEmail" class="form-label">Email</label>
+                <input id="regEmail" v-model="registerData.email" type="email" class="form-control"
+                  :disabled="registering" required />
+              </div>
+              <div class="mb-3">
+                <label for="regPassword" class="form-label">Password</label>
+                <input id="regPassword" v-model="registerData.password" type="password" class="form-control"
+                  :disabled="registering" required />
+              </div>
+              <div class="mb-3">
+                <label for="regConfirm" class="form-label">Confirm Password</label>
+                <input id="regConfirm" v-model="registerData.confirmPassword" type="password" class="form-control"
+                  :disabled="registering" required />
+              </div>
+              <div class="form-check mb-3">
+                <input id="isTeacher" v-model="registerData.isTeacher" class="form-check-input" type="checkbox"
+                  :disabled="registering" />
+                <label for="isTeacher" class="form-check-label">I am a teacher</label>
+              </div>
+
+              <!-- Conditional extra fields -->
+              <div v-if="!registerData.isTeacher">
+                <div class="mb-3">
+                  <label for="studentId" class="form-label">Student ID</label>
+                  <input id="studentId" v-model="registerData.studentId" type="text" class="form-control"
+                    :disabled="registering" required />
+                </div>
+                <div class="mb-3">
+                  <label for="grade" class="form-label">Grade</label>
+                  <input id="grade" v-model="registerData.grade" type="text" class="form-control"
+                    :disabled="registering" required />
+                </div>
+              </div>
+              <div v-else>
+                <div class="mb-3">
+                  <label for="expertise" class="form-label">Expertise</label>
+                  <input id="expertise" v-model="registerData.expertise" type="text" class="form-control"
+                    :disabled="registering" required />
+                </div>
+                <div class="mb-3">
+                  <label for="department" class="form-label">Department</label>
+                  <input id="department" v-model="registerData.department" type="text" class="form-control"
+                    :disabled="registering" required />
+                </div>
+              </div>
+
+              <div v-if="registerError" class="alert alert-danger">{{ registerError }}</div>
+              <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-secondary me-2" @click="closeRegisterModal"
+                  :disabled="registering">
+                  Cancel
+                </button>
+                <button type="submit" class="btn btn-primary" :disabled="registering">
+                  {{ registering ? 'Registering…' : 'Register' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -35,104 +116,84 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuth } from '@/composables/useAuth'
+import auth from '@/services/auth'
 
 const router = useRouter()
-const { login, register } = useAuth()
 
+// Login state
 const loginData = ref({ username: '', password: '' })
+const loggingIn = ref(false)
+const loginError = ref('')
+
+// Register state
+const showRegisterModal = ref(false)
 const registerData = ref({
   username: '',
   email: '',
   password: '',
   confirmPassword: '',
   isTeacher: false,
+  studentId: '',
+  grade: '',
   expertise: '',
   department: ''
 })
-const isRegistering = ref(false)
+const registering = ref(false)
+const registerError = ref('')
 
 async function onLogin() {
+  loginError.value = ''
+  loggingIn.value = true
   try {
-    await login(loginData.value)
-    router.push('/dashboard')
+    await auth.login({
+      username: loginData.value.username,
+      password: loginData.value.password
+    })
+    router.replace('/dashboard')
   } catch {
-    alert('Login failed. Check your username and password.')
+    loginError.value = 'Invalid credentials'
+  } finally {
+    loggingIn.value = false
   }
 }
 
+function closeRegisterModal() {
+  showRegisterModal.value = false
+  registerError.value = ''
+}
+
 async function onRegister() {
+  registerError.value = ''
   if (registerData.value.password !== registerData.value.confirmPassword) {
-    alert('Passwords must match.')
+    registerError.value = "Passwords don't match"
     return
   }
-  if (isRegistering.value) return
-  isRegistering.value = true
-
+  registering.value = true
   try {
-    await register(registerData.value)
-    alert('Registered successfully! Please log in.')
-    registerData.value = {
-      username: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      isTeacher: false,
-      expertise: '',
-      department: ''
+    const payload = {
+      username: registerData.value.username,
+      email: registerData.value.email,
+      password: registerData.value.password,
+      is_teacher: registerData.value.isTeacher
     }
-  } catch (e) {
-    const msg = e.response?.data?.username
-      ? 'Username already exists.'
-      : e.message
-    alert('Register failed: ' + msg)
+    if (registerData.value.isTeacher) {
+      payload.expertise = registerData.value.expertise
+      payload.department = registerData.value.department
+    } else {
+      payload.student_id = registerData.value.studentId
+      payload.grade = registerData.value.grade
+    }
+    await auth.register(payload)
+    alert('Registration successful! You can now log in.')
+    closeRegisterModal()
+  } catch {
+    registerError.value = 'Registration failed'
   } finally {
-    isRegistering.value = false
+    registering.value = false
   }
 }
 </script>
 
 <style scoped>
-.auth-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  font-family: sans-serif;
-}
-
-.form-box {
-  background: #f9f9f9;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.1);
-  text-align: center;
-}
-
-input {
-  display: block;
-  margin: 10px auto;
-  padding: 8px;
-  width: 200px;
-}
-
-button {
-  margin: 5px 0;
-  padding: 8px;
-  width: 100%;
-  background-color: #333;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-button:disabled {
-  background-color: #888;
-  cursor: not-allowed;
-}
-
-hr {
-  margin: 20px 0;
-}
+/* no custom CSS needed */
 </style>

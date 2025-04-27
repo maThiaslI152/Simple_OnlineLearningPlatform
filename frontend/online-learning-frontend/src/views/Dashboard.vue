@@ -1,7 +1,11 @@
 <template>
   <div class="dashboard container py-5">
     <!-- Loading state with Bootstrap spinner -->
-    <div v-if="loading" class="d-flex justify-content-center align-items-center" style="height: 60vh;">
+    <div
+      v-if="loading"
+      class="d-flex justify-content-center align-items-center"
+      style="height: 60vh;"
+    >
       <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
@@ -14,9 +18,9 @@
 
       <!-- Fallback unauthorized card -->
       <div v-else class="text-center mt-5">
-        <div class="card mx-auto" style="max-width: 400px;">
+        <div class="card">
           <div class="card-body">
-            <h3 class="card-title mb-3">Unauthorized</h3>
+            <h3 class="card-title">Unauthorized</h3>
             <p class="card-text">You don’t have access to this page.</p>
             <button @click="onLogout" class="btn btn-danger">
               Go to Login
@@ -35,7 +39,6 @@ import { useAuth } from '@/composables/useAuth'
 import TeacherDashboard from '@/components/TeacherDashboard.vue'
 import StudentDashboard from '@/components/StudentDashboard.vue'
 
-// Destructure auth composable
 const { user, isLoggedIn, refresh, logout } = useAuth()
 const router = useRouter()
 
@@ -47,15 +50,14 @@ const isStudent = computed(() => user.value.roles?.is_student)
 // Logout + redirect helper
 function onLogout() {
   logout()
-  router.replace({ name: '/login' })
+  router.replace('/login')
 }
 
 // Verify auth on mount
 onMounted(async () => {
   if (!isLoggedIn.value) {
-    return router.replace({ name: 'login' })
+    return router.replace('/login')
   }
-
   try {
     await refresh()
   } catch {

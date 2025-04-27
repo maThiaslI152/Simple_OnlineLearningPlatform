@@ -1,34 +1,150 @@
 <template>
-  <div class="dashboard">
-    <!-- loading… -->
-    <div v-if="loading">
-      <h1>Loading your dashboard…</h1>
+  <div class="dashboard container py-5">
+    <!-- Loading state -->
+    <div
+      v-if="loading"
+      class="d-flex justify-content-center align-items-center"
+      style="height: 60vh;"
+    >
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading…</span>
+      </div>
     </div>
 
     <div v-else>
-      <!-- header + logout -->
-      <h1>Welcome, {{ user.username }} (Teacher)</h1>
-      <button @click="logout">Logout</button>
-      <hr />
+      <!-- Header and Add Course button -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Welcome, {{ user.username }} (Teacher)</h1>
+        <button class="btn btn-primary" @click="showModal = true">
+          Add Course
+        </button>
+      </div>
 
-      <!-- your courses list -->
+      <!-- Course list with Edit/Delete -->
       <h2>Your Courses</h2>
-      <ul>
-        <li v-for="c in courses" :key="c.id">
-          <router-link :to="{ name: 'CoursePage', params: { id: c.id } }">
-            {{ c.title }} — {{ c.description }}
-          </router-link>
+      <ul class="list-group mb-4">
+        <li
+          v-for="c in courses"
+          :key="c.id"
+          class="list-group-item d-flex justify-content-between align-items-center"
+        >
+          <div>
+            <router-link :to="{ name: 'CoursePage', params: { id: c.id } }">
+              {{ c.title }} — {{ c.description }}
+            </router-link>
+          </div>
+          <div>
+            <button
+              class="btn btn-sm btn-outline-secondary me-2"
+              @click="openEdit(c)"
+            >
+              Edit
+            </button>
+            <button
+              class="btn btn-sm btn-danger"
+              @click="confirmDelete(c.id)"
+            >
+              Delete
+            </button>
+          </div>
         </li>
       </ul>
 
-      <!-- add new course -->
-      <hr />
-      <h3>Add New Course</h3>
-      <input v-model="newCourse.title" placeholder="Title" :disabled="saving" />
-      <input v-model="newCourse.description" placeholder="Description" :disabled="saving" />
-      <button @click="addCourse" :disabled="saving">
-        {{ saving ? 'Saving…' : 'Create Course' }}
-      </button>
+      <!-- Add Course Modal -->
+      <div
+        class="modal fade"
+        tabindex="-1"
+        :class="{ show: showModal }"
+        :style="{ display: showModal ? 'block' : 'none' }"
+      >
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Add New Course</h5>
+              <button type="button" class="btn-close" @click="closeModal"></button>
+            </div>
+            <div class="modal-body">
+              <input
+                v-model="newCourse.title"
+                class="form-control mb-3"
+                placeholder="Title"
+                :disabled="saving"
+              />
+              <textarea
+                v-model="newCourse.description"
+                class="form-control"
+                placeholder="Description"
+                :disabled="saving"
+              ></textarea>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" @click="closeModal">
+                Cancel
+              </button>
+              <button
+                class="btn btn-primary"
+                @click="addCourse"
+                :disabled="saving"
+              >
+                {{ saving ? 'Saving…' : 'Create Course' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="modal-backdrop fade"
+        :class="{ show: showModal }"
+        v-if="showModal"
+      ></div>
+
+      <!-- Edit Course Modal -->
+      <div
+        class="modal fade"
+        tabindex="-1"
+        :class="{ show: showEditModal }"
+        :style="{ display: showEditModal ? 'block' : 'none' }"
+      >
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Edit Course</h5>
+              <button type="button" class="btn-close" @click="closeEdit"></button>
+            </div>
+            <div class="modal-body">
+              <input
+                v-model="editCourseData.title"
+                class="form-control mb-3"
+                placeholder="Title"
+                :disabled="saving"
+              />
+              <textarea
+                v-model="editCourseData.description"
+                class="form-control"
+                placeholder="Description"
+                :disabled="saving"
+              ></textarea>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" @click="closeEdit">
+                Cancel
+              </button>
+              <button
+                class="btn btn-primary"
+                @click="updateCourse"
+                :disabled="saving"
+              >
+                {{ saving ? 'Updating…' : 'Save Changes' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="modal-backdrop fade"
+        :class="{ show: showEditModal }"
+        v-if="showEditModal"
+      ></div>
     </div>
   </div>
 </template>
@@ -41,38 +157,81 @@ import courseService from '@/services/course'
 
 const { user, isLoggedIn, refresh, logout } = useAuth()
 const router = useRouter()
+
 const loading = ref(true)
 const courses = ref([])
 const newCourse = ref({ title: '', description: '' })
+const editCourseData = ref({ id: null, title: '', description: '' })
 const saving = ref(false)
+const showModal = ref(false)
+const showEditModal = ref(false)
 
 onMounted(async () => {
-  if (!isLoggedIn.value) {
-    return router.replace({ name: 'login' })
-  }
+  if (!isLoggedIn.value) return router.replace({ name: 'login' })
   try {
     await refresh()
     const { data } = await courseService.listMine()
     courses.value = data
-  } catch (e) {
-    console.error('TeacherDashboard onMounted error:', e)
+  } catch {
     logout()
-    return router.replace({ name: 'login' })
+    router.replace({ name: 'login' })
   } finally {
     loading.value = false
   }
 })
+
+function closeModal() {
+  showModal.value = false
+  newCourse.value = { title: '', description: '' }
+}
 
 async function addCourse() {
   if (!newCourse.value.title) return
   saving.value = true
   try {
     await courseService.create(newCourse.value)
-    newCourse.value = { title: '', description: '' }
     const { data } = await courseService.listMine()
     courses.value = data
-  } catch (e) {
-    console.error(e)
+    closeModal()
+  } finally {
+    saving.value = false
+  }
+}
+
+// Edit handlers
+function openEdit(course) {
+  editCourseData.value = { ...course }
+  showEditModal.value = true
+}
+function closeEdit() {
+  showEditModal.value = false
+  editCourseData.value = { id: null, title: '', description: '' }
+}
+async function updateCourse() {
+  if (!editCourseData.value.title) return
+  saving.value = true
+  try {
+    await courseService.update(editCourseData.value.id, {
+      title: editCourseData.value.title,
+      description: editCourseData.value.description
+    })
+    const { data } = await courseService.listMine()
+    courses.value = data
+    closeEdit()
+  } finally {
+    saving.value = false
+  }
+}
+
+// Delete handler
+function confirmDelete(id) {
+  if (confirm('Delete this course?')) deleteCourse(id)
+}
+async function deleteCourse(id) {
+  saving.value = true
+  try {
+    await courseService.delete(id)
+    courses.value = courses.value.filter(c => c.id !== id)
   } finally {
     saving.value = false
   }
@@ -81,30 +240,6 @@ async function addCourse() {
 
 <style scoped>
 .dashboard {
-  max-width: 600px;
-  margin: 40px auto;
-  font-family: sans-serif;
-}
-
-input {
-  display: block;
-  width: 100%;
-  margin: 8px 0;
-  padding: 6px
-}
-
-button {
-  padding: 8px 16px;
-  margin-top: 10px;
-  cursor: pointer
-}
-
-a {
-  color: #4caf50;
-  text-decoration: none
-}
-
-a:hover {
-  text-decoration: underline
+  min-height: 100vh;
 }
 </style>

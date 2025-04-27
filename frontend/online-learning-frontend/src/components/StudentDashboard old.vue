@@ -1,27 +1,17 @@
 <template>
-  <div class="dashboard container mt-5">
-    <!-- loading… -->
-    <div v-if="loading" class="text-center py-5">
-      <div class="spinner-border" role="status">
-        <span class="visually-hidden">Loading…</span>
-      </div>
+  <div class="dashboard">
+    <div v-if="loading">
+      <h1>Loading courses…</h1>
     </div>
-
     <div v-else>
-      <h1 class="mb-4">Welcome, {{ user.username }}</h1>
+      <h1>Welcome, {{ user.username }} (Student)</h1>
+      <button @click="logout">Logout</button>
       <hr />
 
       <h2>Available Courses</h2>
-      <ul class="list-group">
-        <li
-          v-for="c in courses"
-          :key="c.id"
-          class="list-group-item"
-        >
-          <router-link
-            :to="{ name: 'CoursePage', params: { id: c.id } }"
-            class="text-decoration-none"
-          >
+      <ul>
+        <li v-for="c in courses" :key="c.id">
+          <router-link :to="{ name: 'CoursePage', params: { id: c.id } }">
             {{ c.title }} — {{ c.description }}
           </router-link>
         </li>
@@ -47,7 +37,7 @@ onMounted(async () => {
   }
   try {
     await refresh()
-    // students see all courses
+    // students see all courses (or you could call a dedicated endpoint)
     const { data } = await courseService.listAll()
     courses.value = data
   } catch (e) {
@@ -63,16 +53,31 @@ onMounted(async () => {
 <style scoped>
 .dashboard {
   max-width: 600px;
-  margin: auto;
+  margin: 40px auto;
+  font-family: sans-serif;
 }
-.list-group-item + .list-group-item {
-  margin-top: 6px;
+
+button {
+  padding: 8px 16px;
+  margin-top: 10px;
+  cursor: pointer
 }
+
+ul {
+  list-style: none;
+  padding: 0
+}
+
+li+li {
+  margin-top: 6px
+}
+
 a {
   color: #4caf50;
-  text-decoration: none;
+  text-decoration: none
 }
+
 a:hover {
-  text-decoration: underline;
+  text-decoration: underline
 }
 </style>

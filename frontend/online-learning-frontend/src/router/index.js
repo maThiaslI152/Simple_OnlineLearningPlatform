@@ -5,6 +5,7 @@ import TeacherDashboard from '../components/TeacherDashboard'
 import StudentDashboard from '../components/StudentDashboard'
 import CoursePage from '../views/CoursePage.vue'
 import store from '@/store'
+import ProfileSettings from '@/views/ProfileSettings.vue'
 
 const routes = [
   { path: '/', redirect: '/login' },
@@ -18,6 +19,12 @@ const routes = [
     component: CoursePage,
     meta: { requiresAuth: true },
     props: route => ({ id: Number(route.params.id) })
+  },
+  {
+    path: '/profile',
+    name: 'ProfileSettings',
+    component: ProfileSettings,
+    meta: { requiresAuth: true }
   },
 ]
 

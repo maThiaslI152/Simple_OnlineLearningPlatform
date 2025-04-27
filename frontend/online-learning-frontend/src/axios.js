@@ -1,20 +1,20 @@
 import axios from 'axios'
 import store from './store'
 
+// Axios
 const api = axios.create({
-  // ▶️ add the trailing slash here
   baseURL: 'http://localhost:8000/api/auth/',
   headers: { 'Content-Type': 'application/json' }
 })
 
-// Attach access token
+// Request: attach token
 api.interceptors.request.use(cfg => {
   const token = store.state.auth.accessToken
   if (token) cfg.headers.Authorization = `Bearer ${token}`
   return cfg
 })
 
-// Auto-refresh on 401
+// Response: handle 401 → try refresh once, then logout
 api.interceptors.response.use(null, async err => {
   const { response, config } = err
   if (response?.status === 401 && store.state.auth.refreshToken) {

@@ -310,6 +310,10 @@ return dt ? new Date(dt).toLocaleString() : 'N/A'
 onMounted(async () => {
 await loadCourse()
 await loadWeeks()
+// load modules for the first week (so students see content)
+if (selectedWeek.value !== null) {
+  await loadModules(selectedWeek.value)
+}
 })
 </script>
 

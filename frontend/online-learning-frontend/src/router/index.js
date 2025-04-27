@@ -1,3 +1,4 @@
+//router/index
 import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/AuthView.vue'
 import Dashboard from '../views/Dashboard.vue'
@@ -9,7 +10,7 @@ import ProfileSettings from '@/views/ProfileSettings.vue'
 
 const routes = [
   { path: '/', redirect: '/login' },
-  { path: '/login', component: Login },
+  { path: '/login', name: 'login', component: Login },
   { path: '/dashboard', component: Dashboard, meta: { requiresAuth: true } },
   { path: '/teacher-dashboard', component: TeacherDashboard, meta: { requiresAuth: true } },
   { path: '/student-dashboard', component: StudentDashboard, meta: { requiresAuth: true } },

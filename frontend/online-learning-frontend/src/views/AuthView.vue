@@ -9,13 +9,25 @@
           <form @submit.prevent="onLogin">
             <div class="mb-3">
               <label for="loginUsername" class="form-label">Username</label>
-              <input id="loginUsername" v-model="loginData.username" type="text" class="form-control"
-                :disabled="loggingIn" required />
+              <input
+                id="loginUsername"
+                v-model="loginData.username"
+                type="text"
+                class="form-control"
+                :disabled="loggingIn"
+                required
+              />
             </div>
             <div class="mb-3">
               <label for="loginPassword" class="form-label">Password</label>
-              <input id="loginPassword" v-model="loginData.password" type="password" class="form-control"
-                :disabled="loggingIn" required />
+              <input
+                id="loginPassword"
+                v-model="loginData.password"
+                type="password"
+                class="form-control"
+                :disabled="loggingIn"
+                required
+              />
             </div>
             <button type="submit" class="btn btn-primary w-100" :disabled="loggingIn">
               {{ loggingIn ? 'Logging in…' : 'Login' }}
@@ -26,7 +38,10 @@
           <hr class="my-4" />
 
           <!-- Register Button -->
-          <button class="btn btn-secondary w-100" @click="showRegisterModal = true">
+          <button
+            class="btn btn-secondary w-100"
+            @click="showRegisterModal = true"
+          >
             Register
           </button>
         </div>
@@ -34,7 +49,12 @@
     </div>
 
     <!-- Register Modal -->
-    <div v-if="showRegisterModal" class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+    <div
+      v-if="showRegisterModal"
+      class="modal fade show d-block"
+      tabindex="-1"
+      style="background: rgba(0,0,0,0.5);"
+    >
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
@@ -45,60 +65,91 @@
             <form @submit.prevent="onRegister">
               <div class="mb-3">
                 <label for="regUsername" class="form-label">Username</label>
-                <input id="regUsername" v-model="registerData.username" type="text" class="form-control"
-                  :disabled="registering" required />
+                <input
+                  id="regUsername"
+                  v-model="registerData.username"
+                  type="text"
+                  class="form-control"
+                  :disabled="registering"
+                  required
+                />
               </div>
               <div class="mb-3">
                 <label for="regEmail" class="form-label">Email</label>
-                <input id="regEmail" v-model="registerData.email" type="email" class="form-control"
-                  :disabled="registering" required />
+                <input
+                  id="regEmail"
+                  v-model="registerData.email"
+                  type="email"
+                  class="form-control"
+                  :disabled="registering"
+                  required
+                />
               </div>
               <div class="mb-3">
                 <label for="regPassword" class="form-label">Password</label>
-                <input id="regPassword" v-model="registerData.password" type="password" class="form-control"
-                  :disabled="registering" required />
+                <input
+                  id="regPassword"
+                  v-model="registerData.password"
+                  type="password"
+                  class="form-control"
+                  :disabled="registering"
+                  required
+                />
               </div>
               <div class="mb-3">
                 <label for="regConfirm" class="form-label">Confirm Password</label>
-                <input id="regConfirm" v-model="registerData.confirmPassword" type="password" class="form-control"
-                  :disabled="registering" required />
+                <input
+                  id="regConfirm"
+                  v-model="registerData.confirmPassword"
+                  type="password"
+                  class="form-control"
+                  :disabled="registering"
+                  required
+                />
               </div>
               <div class="form-check mb-3">
-                <input id="isTeacher" v-model="registerData.isTeacher" class="form-check-input" type="checkbox"
-                  :disabled="registering" />
+                <input
+                  id="isTeacher"
+                  v-model="registerData.isTeacher"
+                  class="form-check-input"
+                  type="checkbox"
+                  :disabled="registering"
+                />
                 <label for="isTeacher" class="form-check-label">I am a teacher</label>
               </div>
-
-              <!-- Conditional extra fields -->
-              <div v-if="!registerData.isTeacher">
-                <div class="mb-3">
-                  <label for="studentId" class="form-label">Student ID</label>
-                  <input id="studentId" v-model="registerData.studentId" type="text" class="form-control"
-                    :disabled="registering" required />
-                </div>
-                <div class="mb-3">
-                  <label for="grade" class="form-label">Grade</label>
-                  <input id="grade" v-model="registerData.grade" type="text" class="form-control"
-                    :disabled="registering" required />
-                </div>
-              </div>
-              <div v-else>
+              <div v-if="registerData.isTeacher">
                 <div class="mb-3">
                   <label for="expertise" class="form-label">Expertise</label>
-                  <input id="expertise" v-model="registerData.expertise" type="text" class="form-control"
-                    :disabled="registering" required />
+                  <input
+                    id="expertise"
+                    v-model="registerData.expertise"
+                    type="text"
+                    class="form-control"
+                    :disabled="registering"
+                    required
+                  />
                 </div>
                 <div class="mb-3">
                   <label for="department" class="form-label">Department</label>
-                  <input id="department" v-model="registerData.department" type="text" class="form-control"
-                    :disabled="registering" required />
+                  <input
+                    id="department"
+                    v-model="registerData.department"
+                    type="text"
+                    class="form-control"
+                    :disabled="registering"
+                    required
+                  />
                 </div>
               </div>
 
               <div v-if="registerError" class="alert alert-danger">{{ registerError }}</div>
               <div class="d-flex justify-content-end">
-                <button type="button" class="btn btn-secondary me-2" @click="closeRegisterModal"
-                  :disabled="registering">
+                <button
+                  type="button"
+                  class="btn btn-secondary me-2"
+                  @click="closeRegisterModal"
+                  :disabled="registering"
+                >
                   Cancel
                 </button>
                 <button type="submit" class="btn btn-primary" :disabled="registering">
@@ -116,9 +167,10 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import auth from '@/services/auth'
+import { useStore } from 'vuex'
 
 const router = useRouter()
+const store = useStore()
 
 // Login state
 const loginData = ref({ username: '', password: '' })
@@ -133,8 +185,6 @@ const registerData = ref({
   password: '',
   confirmPassword: '',
   isTeacher: false,
-  studentId: '',
-  grade: '',
   expertise: '',
   department: ''
 })
@@ -145,12 +195,12 @@ async function onLogin() {
   loginError.value = ''
   loggingIn.value = true
   try {
-    await auth.login({
+    await store.dispatch('auth/login', {
       username: loginData.value.username,
       password: loginData.value.password
     })
     router.replace('/dashboard')
-  } catch {
+  } catch (e) {
     loginError.value = 'Invalid credentials'
   } finally {
     loggingIn.value = false
@@ -170,23 +220,10 @@ async function onRegister() {
   }
   registering.value = true
   try {
-    const payload = {
-      username: registerData.value.username,
-      email: registerData.value.email,
-      password: registerData.value.password,
-      is_teacher: registerData.value.isTeacher
-    }
-    if (registerData.value.isTeacher) {
-      payload.expertise = registerData.value.expertise
-      payload.department = registerData.value.department
-    } else {
-      payload.student_id = registerData.value.studentId
-      payload.grade = registerData.value.grade
-    }
-    await auth.register(payload)
+    await store.dispatch('auth/register', registerData.value)
     alert('Registration successful! You can now log in.')
     closeRegisterModal()
-  } catch {
+  } catch (e) {
     registerError.value = 'Registration failed'
   } finally {
     registering.value = false
@@ -195,5 +232,5 @@ async function onRegister() {
 </script>
 
 <style scoped>
-/* no custom CSS needed */
+/* No extra CSS needed */
 </style>

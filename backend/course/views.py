@@ -131,6 +131,7 @@ class WeekViewSet(viewsets.ModelViewSet):
 class NoteViewSet(BaseModuleViewSet):
     queryset         = Note.objects.all()
     serializer_class = NoteSerializer
+    parser_classes = (MultiPartParser, FormParser)
 
     @action(detail=True, methods=['get'], url_path='download')
     def download(self, request, course_pk=None, week_pk=None, pk=None):
@@ -144,10 +145,12 @@ class NoteViewSet(BaseModuleViewSet):
 class VideoViewSet(BaseModuleViewSet):
     queryset         = Video.objects.all()
     serializer_class = VideoSerializer
+    parser_classes = (MultiPartParser, FormParser)
 
 class HomeworkViewSet(BaseModuleViewSet):
     queryset         = Homework.objects.all()
     serializer_class = HomeworkSerializer
+    parser_classes = (MultiPartParser, FormParser)
 
     @action(
         detail=True,
@@ -169,10 +172,12 @@ class HomeworkViewSet(BaseModuleViewSet):
 class TestViewSet(BaseModuleViewSet):
     queryset         = Test.objects.all()
     serializer_class = TestSerializer
+    parser_classes = (MultiPartParser, FormParser)
     
 class SubmissionViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class   = SubmissionSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
 
     def get_queryset(self):
         course_pk   = self.kwargs.get('course_pk')

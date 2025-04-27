@@ -4,6 +4,20 @@ info:
   version: 1.0.0
   description: Endpoints for courses, weeks, modules, submissions, auth…
 paths:
+  /api/auth/register/:
+    post:
+      operationId: api_auth_register_create
+      description: |-
+        POST /api/auth/register/
+        If `is_teacher` is truthy, uses TeacherRegisterSerializer;
+        otherwise uses StudentRegisterSerializer.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/auth/token/:
     post:
       operationId: api_auth_token_create

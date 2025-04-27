@@ -1,9 +1,27 @@
+#course/serializer
 from rest_framework import serializers
-from .models import Course, Note, Video, Homework, Test, Submission
+from .models import Course, Note, Video, Homework, Test, Submission, Week
 from user.models import CustomUser
 from django.conf import settings
 from minio import Minio
 from datetime import timedelta
+
+# -----------------------------------
+# User serializers
+# -----------------------------------
+class UserSerializer(serializers.ModelSerializer):
+    # expose `profile_picture.url` as `picture` (or null if none)
+    picture = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = CustomUser
+        fields = ['id', 'username', 'picture']
+
+    def get_picture(self, obj):
+        if obj.profile_picture:
+            # if using default storage, `.url` gives the public URL
+            return obj.profile_picture.url
+        return None
 
 # -----------------------------------
 # Module serializers (flat, all fields)
@@ -124,19 +142,23 @@ class SubmissionSerializer(serializers.ModelSerializer):
 # Course serializers
 # -----------------------------------
 
+class WeekSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Week
+        fields = ['id', 'week_number']
+
 class CourseSerializer(serializers.ModelSerializer):
-    # used for list & create
     class Meta:
         model = Course
-        fields = ['id', 'title', 'description', 'teacher', 'created_at']
+        fields = ['id', 'title', 'description', 'created_at']
 
 class CourseDetailSerializer(serializers.ModelSerializer):
-    # used for retrieve
+    teacher         = UserSerializer(read_only=True)
     available_weeks = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
-        fields = ['id', 'title', 'description', 'available_weeks']
+        fields = ['id', 'title', 'description', 'teacher', 'available_weeks']
 
     def get_available_weeks(self, obj):
         # returns a sorted list of week numbers

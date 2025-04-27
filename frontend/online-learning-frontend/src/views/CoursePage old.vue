@@ -27,7 +27,7 @@ async function loadCourse() {
 
 async function loadWeeks() {
   const { data } = await courseService.getDetail(courseId.value)
-  weeks.value = Array.from({ length: data.total_weeks }, (_, i) => i + 1)
+  weeks.value = data.available_weeks
 }
 
 async function loadModules() {
@@ -63,15 +63,14 @@ async function handleDeleteHomework(homeworkId) {
 }
 
 async function addWeek() {
-  if (confirm('Add a new week to this course?')) {
-    try {
-      await courseService.addWeek(courseId.value)
-      await loadWeeks()
-      alert('New week added.')
-    } catch (error) {
-      console.error('Failed to add week:', error.response?.data || error)
-      alert('Failed to add week.')
-    }
+  if (!confirm('Add a new week ?')) return
+  try {
+    await courseService.addWeek(courseId.value)
+    await loadWeeks()    // reload available_weeks
+    alert('Week added')
+  } catch (err) {
+    console.error('Failed to add week:', err.response?.data || err)
+    alert('Failed to add week.')
   }
 }
 
@@ -108,12 +107,13 @@ onMounted(() => {
       </button>
     </div>
 
-    <NoteSection :notes="notes" :week="selectedWeek" :courseId="courseId.value" @refreshModules="loadModules" />
-
     <VideoSection :videos="videos" :week="selectedWeek" :courseId="courseId.value" @refreshModules="loadModules" />
 
-    <HomeworkSection :homeworks="homeworks" :week="selectedWeek" :courseId="courseId.value"
-      @refreshModules="loadModules" @deleteHomework="handleDeleteHomework" />
+    <NoteSection :notes="notes" :week="selectedWeek" :course-id="courseId" @refresh-modules="loadModules" />
+
+    <HomeworkSection :homeworks="homeworks" :week="selectedWeek" :course-id="courseId" @refresh-modules="loadModules"
+      @delete-homework="handleDeleteHomework" />
+
 
     <TestSection :tests="tests" :week="selectedWeek" :courseId="courseId.value" @refreshModules="loadModules" />
   </div>

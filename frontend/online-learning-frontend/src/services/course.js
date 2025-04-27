@@ -2,11 +2,12 @@
 import axios from 'axios'
 import store from '@/store'
 
+  // point axios to /api/courses/
 const courseApi = axios.create({
-  baseURL: 'http://localhost:8000/api/course/'
+  baseURL: 'http://localhost:8000/api/courses/'
 })
 
-// — Attach JWT to every request —
+// Attach JWT and auto-refresh
 courseApi.interceptors.request.use(cfg => {
   const token = store.state.auth.accessToken
   if (token) cfg.headers.Authorization = `Bearer ${token}`
@@ -33,68 +34,35 @@ courseApi.interceptors.response.use(
 
 export default {
   // — Course CRUD —
-  listAll:    ()      => courseApi.get(''),
-  listMine:   ()      => courseApi.get('mine/'),
-  getDetail:  id      => courseApi.get(`${id}/`),
-  create:     payload => courseApi.post('', payload),
-
+  listAll:    ()               => courseApi.get(''),
+  listMine:   ()               => courseApi.get('mine/'),
+  getDetail:  id               => courseApi.get(`${id}/`),
+  create:     data             => courseApi.post('', data),
+  update:     (id, data)       => courseApi.put(`${id}/`, data),
+  delete:     id               => courseApi.delete(`${id}/`),
   // — Weeks —
-  addWeek:    id      => courseApi.post(`${id}/add_week/`),
+  listWeeks:  courseId     => courseApi.get(`${courseId}/`),         // reuse getDetail or drop this if unused
+  addWeek:    courseId     => courseApi.post(`${courseId}/add_week/`),
+  
+  // — Notes —
+  listNotes:   (cId, wId)            => courseApi.get(`${cId}/weeks/${wId}/notes/`),
+  createNote:  (cId, wId, fd)        => courseApi.post(`${cId}/weeks/${wId}/notes/`, fd),
+  deleteNote:  (cId, wId, noteId)    => courseApi.delete(`${cId}/weeks/${wId}/notes/${noteId}/`),
 
-  // — Module listings —
-  listNotes:     (c, w) =>
-    courseApi.get(`${c}/note/`, { params: { week_number: w } }),
-  listVideos:    (c, w) =>
-    courseApi.get(`${c}/video/`, { params: { week_number: w } }),
-  listHomework:  (c, w) =>
-    courseApi.get(`${c}/homework/`, { params: { week_number: w } }),
-  listTests:     (c, w) =>
-    courseApi.get(`${c}/test/`, { params: { week_number: w } }),
-  listSubmissions: (c, h) =>
-    courseApi.get(`${c}/homework/${h}/submissions/`),
+  // — Videos —
+  listVideos:  (cId, wId)            => courseApi.get(`${cId}/weeks/${wId}/videos/`),
+  createVideo: (cId, wId, fd)        => courseApi.post(`${cId}/weeks/${wId}/videos/`, fd),
+  deleteVideo: (cId, wId, videoId)   => courseApi.delete(`${cId}/weeks/${wId}/videos/${videoId}/`),
 
-  // — Module creation (with FormData) —
-  createNote:       (c, w, fd) =>
-    courseApi.post(
-      `${c}/note/`,
-      fd,
-      {
-        params: { week_number: w },
-        headers: { 'Content-Type': 'multipart/form-data' }
-      }
-    ),
+  // — Homework —
+  listHomework:   (cId, wId)                 => courseApi.get(`${cId}/weeks/${wId}/homework/`),
+  createHomework: (cId, wId, fd)             => courseApi.post(`${cId}/weeks/${wId}/homework/`, fd),
+  deleteHomework: (cId, wId, hwId)           => courseApi.delete(`${cId}/weeks/${wId}/homework/${hwId}/`),
+  submitHomework: (cId, wId, hwId, fd)       => courseApi.post(`${cId}/weeks/${wId}/homework/${hwId}/submit/`, fd),
+  listSubmissions:(cId, wId, hwId)           => courseApi.get(`${cId}/weeks/${wId}/homework/${hwId}/submissions/`),
 
-  createVideo:      (c, w, fd) =>
-    courseApi.post(
-      `${c}/video/`,
-      fd,
-      {
-        params: { week_number: w },
-        headers: { 'Content-Type': 'multipart/form-data' }
-      }
-    ),
-
-  createHomework:   (c, w, fd) =>
-    courseApi.post(
-      `${c}/homework/`,
-      fd,
-      {
-        params: { week_number: w },
-        headers: { 'Content-Type': 'multipart/form-data' }
-      }
-    ),
-
-  createTest:       (c, w, payload) =>
-    courseApi.post(
-      `${c}/test/`,
-      { ...payload, course: c, week_number: w }
-    ),
-
-  // — Deletions —
-  deleteNote:       (c, n) => courseApi.delete(`${c}/note/${n}/`),
-  deleteHomework:   (c, h) => courseApi.delete(`${c}/homework/${h}/`),
-
-  // — Student submits homework —
-  submitHomework:   (c, h, fd) =>
-    courseApi.post(`${c}/homework/${h}/submit/`, fd),
+  // — Tests —
+  listTests:   (cId, wId)             => courseApi.get(`${cId}/weeks/${wId}/tests/`),
+  createTest:  (cId, wId, payload)    => courseApi.post(`${cId}/weeks/${wId}/tests/`, payload),
+  deleteTest:  (cId, wId, testId)     => courseApi.delete(`${cId}/weeks/${wId}/tests/${testId}/`),
 }

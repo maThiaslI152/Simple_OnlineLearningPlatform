@@ -1,0 +1,1955 @@
+openapi: 3.0.3
+info:
+  title: My Learning Platform API
+  version: 1.0.0
+  description: Endpoints for courses, weeks, modules, submissions, auth…
+paths:
+  /api/auth/token/:
+    post:
+      operationId: api_auth_token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomTokenObtainPair'
+          description: ''
+  /api/auth/token/refresh/:
+    post:
+      operationId: api_auth_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/auth/whoami/:
+    get:
+      operationId: api_auth_whoami_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/courses/:
+    get:
+      operationId: api_courses_list
+      parameters:
+      - in: query
+        name: students
+        schema:
+          type: array
+          items:
+            type: integer
+        explode: true
+        style: form
+      - in: query
+        name: teacher
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Course'
+          description: ''
+    post:
+      operationId: api_courses_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Course'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Course'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Course'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+          description: ''
+  /api/courses/{course_pk}/weeks/:
+    get:
+      operationId: api_courses_weeks_list
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Week'
+          description: ''
+    post:
+      operationId: api_courses_weeks_create
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Week'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Week'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Week'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Week'
+          description: ''
+  /api/courses/{course_pk}/weeks/{id}/:
+    get:
+      operationId: api_courses_weeks_retrieve
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Week'
+          description: ''
+    put:
+      operationId: api_courses_weeks_update
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Week'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Week'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Week'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Week'
+          description: ''
+    patch:
+      operationId: api_courses_weeks_partial_update
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedWeek'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedWeek'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedWeek'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Week'
+          description: ''
+    delete:
+      operationId: api_courses_weeks_destroy
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/courses/{course_pk}/weeks/{week_pk}/homework/:
+    get:
+      operationId: api_courses_weeks_homework_list
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+          description: (temporarily nullable so migrations run cleanly)
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Homework'
+          description: ''
+    post:
+      operationId: api_courses_weeks_homework_create
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+          description: (temporarily nullable so migrations run cleanly)
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Homework'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Homework'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Homework'
+          description: ''
+  /api/courses/{course_pk}/weeks/{week_pk}/homework/{homework_pk}/submissions/:
+    get:
+      operationId: api_courses_weeks_homework_submissions_list
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: homework_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Submission'
+          description: ''
+  /api/courses/{course_pk}/weeks/{week_pk}/homework/{homework_pk}/submissions/{id}/:
+    get:
+      operationId: api_courses_weeks_homework_submissions_retrieve
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: homework_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this submission.
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+          description: ''
+  /api/courses/{course_pk}/weeks/{week_pk}/homework/{id}/:
+    get:
+      operationId: api_courses_weeks_homework_retrieve
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this homework.
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+          description: (temporarily nullable so migrations run cleanly)
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Homework'
+          description: ''
+    put:
+      operationId: api_courses_weeks_homework_update
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this homework.
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+          description: (temporarily nullable so migrations run cleanly)
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Homework'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Homework'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Homework'
+          description: ''
+    patch:
+      operationId: api_courses_weeks_homework_partial_update
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this homework.
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+          description: (temporarily nullable so migrations run cleanly)
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedHomework'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedHomework'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Homework'
+          description: ''
+    delete:
+      operationId: api_courses_weeks_homework_destroy
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this homework.
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+          description: (temporarily nullable so migrations run cleanly)
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/courses/{course_pk}/weeks/{week_pk}/homework/{id}/submit/:
+    post:
+      operationId: api_courses_weeks_homework_submit_create
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this homework.
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+          description: (temporarily nullable so migrations run cleanly)
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Homework'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Homework'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Homework'
+          description: ''
+  /api/courses/{course_pk}/weeks/{week_pk}/notes/:
+    get:
+      operationId: api_courses_weeks_notes_list
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+          description: Make nullable temporarily for migrations
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Note'
+          description: ''
+    post:
+      operationId: api_courses_weeks_notes_create
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+          description: Make nullable temporarily for migrations
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Note'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Note'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+          description: ''
+  /api/courses/{course_pk}/weeks/{week_pk}/notes/{id}/:
+    get:
+      operationId: api_courses_weeks_notes_retrieve
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this note.
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+          description: Make nullable temporarily for migrations
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+          description: ''
+    put:
+      operationId: api_courses_weeks_notes_update
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this note.
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+          description: Make nullable temporarily for migrations
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Note'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Note'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+          description: ''
+    patch:
+      operationId: api_courses_weeks_notes_partial_update
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this note.
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+          description: Make nullable temporarily for migrations
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedNote'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedNote'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+          description: ''
+    delete:
+      operationId: api_courses_weeks_notes_destroy
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this note.
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+          description: Make nullable temporarily for migrations
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/courses/{course_pk}/weeks/{week_pk}/notes/{id}/download/:
+    get:
+      operationId: api_courses_weeks_notes_download_retrieve
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this note.
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+          description: Make nullable temporarily for migrations
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+          description: ''
+  /api/courses/{course_pk}/weeks/{week_pk}/tests/:
+    get:
+      operationId: api_courses_weeks_tests_list
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+          description: Temporarily nullable for migrations
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Test'
+          description: ''
+    post:
+      operationId: api_courses_weeks_tests_create
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+          description: Temporarily nullable for migrations
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Test'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Test'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Test'
+          description: ''
+  /api/courses/{course_pk}/weeks/{week_pk}/tests/{id}/:
+    get:
+      operationId: api_courses_weeks_tests_retrieve
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this test.
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+          description: Temporarily nullable for migrations
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Test'
+          description: ''
+    put:
+      operationId: api_courses_weeks_tests_update
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this test.
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+          description: Temporarily nullable for migrations
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Test'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Test'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Test'
+          description: ''
+    patch:
+      operationId: api_courses_weeks_tests_partial_update
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this test.
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+          description: Temporarily nullable for migrations
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Test'
+          description: ''
+    delete:
+      operationId: api_courses_weeks_tests_destroy
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this test.
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+          description: Temporarily nullable for migrations
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/courses/{course_pk}/weeks/{week_pk}/videos/:
+    get:
+      operationId: api_courses_weeks_videos_list
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Video'
+          description: ''
+    post:
+      operationId: api_courses_weeks_videos_create
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Video'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Video'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Video'
+          description: ''
+  /api/courses/{course_pk}/weeks/{week_pk}/videos/{id}/:
+    get:
+      operationId: api_courses_weeks_videos_retrieve
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this video.
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Video'
+          description: ''
+    put:
+      operationId: api_courses_weeks_videos_update
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this video.
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Video'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Video'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Video'
+          description: ''
+    patch:
+      operationId: api_courses_weeks_videos_partial_update
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this video.
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedVideo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedVideo'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Video'
+          description: ''
+    delete:
+      operationId: api_courses_weeks_videos_destroy
+      parameters:
+      - in: path
+        name: course_pk
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this video.
+        required: true
+      - in: path
+        name: week_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/courses/{id}/:
+    get:
+      operationId: api_courses_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this course.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseDetail'
+          description: ''
+    put:
+      operationId: api_courses_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this course.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Course'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Course'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Course'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+          description: ''
+    patch:
+      operationId: api_courses_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this course.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCourse'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCourse'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCourse'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+          description: ''
+    delete:
+      operationId: api_courses_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this course.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/courses/{id}/add_week/:
+    post:
+      operationId: api_courses_add_week_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this course.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Course'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Course'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Course'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+          description: ''
+  /api/courses/mine/:
+    get:
+      operationId: api_courses_mine_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseDetail'
+          description: ''
+  /api/schema/:
+    get:
+      operationId: api_schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/upload/:
+    post:
+      operationId: api_upload_create
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    Course:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - description
+      - id
+      - title
+    CourseDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        teacher:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        available_weeks:
+          type: string
+          readOnly: true
+      required:
+      - available_weeks
+      - description
+      - id
+      - teacher
+      - title
+    CustomTokenObtainPair:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - password
+      - username
+    Homework:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        course:
+          type: integer
+          readOnly: true
+        week:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: (temporarily nullable so migrations run cleanly)
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        file:
+          type: string
+          format: uri
+          nullable: true
+        file_url:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - course
+      - created_at
+      - description
+      - file_url
+      - id
+      - title
+      - week
+    Note:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        course:
+          type: integer
+          readOnly: true
+        week:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: Make nullable temporarily for migrations
+        title:
+          type: string
+          maxLength: 200
+        content:
+          type: string
+        file:
+          type: string
+          format: uri
+          nullable: true
+        file_url:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - content
+      - course
+      - created_at
+      - file_url
+      - id
+      - title
+      - week
+    PatchedCourse:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedHomework:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        course:
+          type: integer
+          readOnly: true
+        week:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: (temporarily nullable so migrations run cleanly)
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        file:
+          type: string
+          format: uri
+          nullable: true
+        file_url:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedNote:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        course:
+          type: integer
+          readOnly: true
+        week:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: Make nullable temporarily for migrations
+        title:
+          type: string
+          maxLength: 200
+        content:
+          type: string
+        file:
+          type: string
+          format: uri
+          nullable: true
+        file_url:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedTest:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        course:
+          type: integer
+        week:
+          type: integer
+          nullable: true
+          description: Temporarily nullable for migrations
+        title:
+          type: string
+          maxLength: 200
+        questions: {}
+        attempt_limit:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        time_limit:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedVideo:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        course:
+          type: integer
+          readOnly: true
+        week:
+          type: integer
+          readOnly: true
+          nullable: true
+        title:
+          type: string
+          maxLength: 200
+        file:
+          type: string
+          format: uri
+          nullable: true
+        file_url:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedWeek:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        week_number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+    Submission:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        homework:
+          type: integer
+          readOnly: true
+        student:
+          type: integer
+          readOnly: true
+        student_name:
+          type: string
+          readOnly: true
+        file:
+          type: string
+          format: uri
+        file_url:
+          type: string
+          readOnly: true
+        submitted_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - file
+      - file_url
+      - homework
+      - id
+      - student
+      - student_name
+      - submitted_at
+    Test:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        course:
+          type: integer
+        week:
+          type: integer
+          nullable: true
+          description: Temporarily nullable for migrations
+        title:
+          type: string
+          maxLength: 200
+        questions: {}
+        attempt_limit:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        time_limit:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - course
+      - created_at
+      - id
+      - questions
+      - title
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        picture:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - picture
+      - username
+    Video:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        course:
+          type: integer
+          readOnly: true
+        week:
+          type: integer
+          readOnly: true
+          nullable: true
+        title:
+          type: string
+          maxLength: 200
+        file:
+          type: string
+          format: uri
+          nullable: true
+        file_url:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - course
+      - created_at
+      - file_url
+      - id
+      - title
+      - week
+    Week:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        week_number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+      required:
+      - id
+      - week_number
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

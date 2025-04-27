@@ -32,6 +32,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # api
+    'drf_spectacular',
+    'drf_spectacular_sidecar',
     'django_filters',
     'rest_framework',
     'rest_framework_simplejwt',
@@ -164,6 +166,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 #REST_FRAMEWORK
 REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
@@ -182,4 +185,11 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
     'BLACKLIST_AFTER_ROTATION': True,
     'ROTATE_REFRESH_TOKENS': True,
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE':       'My Learning Platform API',
+    'DESCRIPTION': 'Endpoints for courses, weeks, modules, submissions, auth…',
+    'VERSION':     '1.0.0',
+    # You can fine-tune tags, auth schemes, etc. here
 }

@@ -13,8 +13,8 @@ A full-stack web application for creating and managing online courses. Teachers 
 ## Tech Stack
 - **Backend**: Django, Django REST Framework, drf-spectacular
 - **Frontend**: Vue 3 (Composition API), Vuex, Vue Router, Axios, Bootstrap 5
-- **Storage**: MinIO or local MEDIA files in development
-- **Database**: SQLite (dev) / PostgreSQL (prod)
+- **Storage**: MinIO 
+- **Database**: PostgreSQL 
 
 ## Prerequisites
 - Python 3.10+ & pip
@@ -70,5 +70,5 @@ Open your browser at:
 5. Open a Pull Request
 
 ## License
-MIT © Your Name
+MIT © Isaiah Pawenapakorn
 
